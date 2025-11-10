@@ -14,11 +14,24 @@ class QuickSearchBar extends StatefulWidget {
 
 class _QuickSearchBarState extends State<QuickSearchBar> {
   final _searchController = TextEditingController();
+  bool _hasSearch = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onTextChanged);
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onTextChanged() {
+    setState(() {
+      _hasSearch = _searchController.text.isNotEmpty;
+    });
   }
 
   void _handleSearch(BuildContext context) {
@@ -57,10 +70,20 @@ class _QuickSearchBarState extends State<QuickSearchBar> {
             border: InputBorder.none,
             hoverColor: Colors.transparent,
             fillColor: Colors.grey[50],
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: () => _handleSearch(context),
-            ),
+            suffixIcon:
+                _hasSearch
+                    ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        _hasSearch = false;
+                        setState(() {});
+                      },
+                    )
+                    : IconButton(
+                      icon: const Icon(Icons.search),
+                      onPressed: () => _handleSearch(context),
+                    ),
           ),
 
           textInputAction: TextInputAction.search,
