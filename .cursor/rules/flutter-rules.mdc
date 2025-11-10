@@ -1,0 +1,37 @@
+---
+alwaysApply: true
+---
+
+# Regras de Desenvolvimento Flutter
+
+## Criação de Widgets
+
+- Durante a criação de widgets, evitar ao máximo utilizar funções para criar widgets. Sempre que possível, deve-se criar um novo arquivo com o novo widget (como uma classe `StatelessWidget` ou `StatefulWidget`) ao invés de usar métodos/funções que retornam widgets.
+  - **Motivo**: Widgets próprios melhoram performance (otimização de rebuilds), reutilização, manutenibilidade e funcionam melhor com Hot Reload.
+
+## Navegação e Compartilhamento de Providers
+
+- Ao navegar para uma nova rota e passar providers existentes, sempre usar `ChangeNotifierProvider.value` com `MultiProvider` e utilizar underscore (`_`) no parâmetro do builder do `MaterialPageRoute`, já que o context usado vem do escopo do método pai.
+
+**Padrão correto:**
+```dart
+Navigator.push(
+  context,  // context do widget pai
+  MaterialPageRoute(
+    builder: (_) => MultiProvider(  // underscore indica que não usa o parâmetro
+      providers: [
+        ChangeNotifierProvider.value(value: context.read<CategoryProvider>()),
+        ChangeNotifierProvider.value(value: context.read<ComponentProvider>()),
+        ChangeNotifierProvider.value(value: context.read<ReportProvider>()),
+      ],
+      child: const TelaDestino(),
+    ),
+  ),
+);
+```
+
+  - **Motivo**: 
+    - O underscore (`_`) indica claramente que o parâmetro do builder não é usado
+    - O `context` em `context.read<>()` vem do escopo do método pai (onTap, etc), não do builder
+    - `ChangeNotifierProvider.value` reutiliza a instância existente do provider ao invés de criar uma nova
+    - Todas as rotas compartilham o mesmo estado dos providers

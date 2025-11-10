@@ -1,0 +1,77 @@
+========================================
+  ORGANIZADOR DE OFICINA - INÍCIO RÁPIDO
+========================================
+
+🚀 COMO EXECUTAR O APP:
+
+Opção 1: MAIS FÁCIL (Scripts)
+------------------------------
+1. Clique duplo em: run_debug.bat
+   ✓ Inicia o app em modo debug
+   ✓ Com hot reload ativo
+
+Opção 2: VSCode/Cursor
+-----------------------
+1. Abra o projeto no VSCode/Cursor
+2. Pressione F5
+   ✓ Inicia automaticamente em modo debug
+   ✓ Breakpoints funcionando
+
+Opção 3: Terminal
+-----------------
+1. Abra o CMD nesta pasta
+2. Execute: flutter run -d windows
+
+
+📦 COMPILAR EXECUTÁVEL:
+-----------------------
+1. Clique duplo em: build_release.bat
+2. Executável em: build\windows\x64\runner\Release\app_organizador_oficina.exe
+
+
+📚 DOCUMENTAÇÃO:
+---------------
+- README.md         → Documentação completa do projeto
+- GUIA_RAPIDO.md    → Guia de uso do aplicativo
+- DEBUG_GUIDE.md    → Guia detalhado de debug
+
+
+⚙️ ARQUIVOS CRIADOS:
+-------------------
+.vscode/
+  ├── launch.json   → Configurações de debug
+  ├── tasks.json    → Tarefas do Flutter  
+  └── settings.json → Configurações recomendadas
+
+Scripts:
+  ├── run_debug.bat      → Executar em modo debug
+  ├── run_release.bat    → Executar em modo release
+  └── build_release.bat  → Compilar executável
+
+
+🔥 ATALHOS ÚTEIS (VSCode):
+-------------------------
+F5             → Iniciar debug
+Shift + F5     → Parar debug
+Ctrl + Shift + F5 → Reiniciar
+r (no terminal)→ Hot Reload
+R (no terminal)→ Hot Restart
+
+
+✅ VERIFICAR INSTALAÇÃO:
+------------------------
+flutter --version
+flutter devices
+flutter doctor
+
+
+❓ PROBLEMAS?
+-------------
+Consulte: DEBUG_GUIDE.md
+Seção "Solução de Problemas"
+
+
+========================================
+         Bom desenvolvimento! 🎉
+========================================
+
