@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:workshop_shelf_helper/models/component_filter.dart';
 import 'package:workshop_shelf_helper/providers/component_provider.dart';
 import 'package:workshop_shelf_helper/providers/category_provider.dart';
 import 'package:workshop_shelf_helper/providers/report_provider.dart';
@@ -20,15 +21,16 @@ class ComponentsListScreen extends StatefulWidget {
 
 class _ComponentsListScreenState extends State<ComponentsListScreen> {
   final _searchController = TextEditingController();
+  late ComponentProvider _componentProvider;
   final _currencyFormat = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
   bool _showFilters = false;
 
   @override
   void initState() {
     super.initState();
+    _componentProvider = context.read<ComponentProvider>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ComponentProvider>().loadComponents();
-      context.read<CategoryProvider>().loadCategories();
+      _componentProvider.init();
     });
   }
 
@@ -36,11 +38,6 @@ class _ComponentsListScreenState extends State<ComponentsListScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
-  }
-
-  void _loadData() {
-    context.read<ComponentProvider>().loadComponents();
-    context.read<CategoryProvider>().loadCategories();
   }
 
   @override
@@ -62,31 +59,24 @@ class _ComponentsListScreenState extends State<ComponentsListScreen> {
         children: [
           ComponentSearchBar(
             controller: _searchController,
-            onChanged: (value) => context.read<ComponentProvider>().search(value),
+            onChanged: (value) => _componentProvider.filterComponents(searchTerm: value),
             onClear: () {
               _searchController.clear();
-              context.read<ComponentProvider>().search('');
+              _componentProvider.filterComponents(searchTerm: '');
             },
           ),
           if (_showFilters) ComponentFilters(searchController: _searchController),
           Expanded(
             child: Selector<
               ComponentProvider,
-              ({
-                bool isLoading,
-                String? error,
-                List<Component> components,
-                String searchTerm,
-                int? categoryFilter,
-              })
+              ({bool isLoading, String? error, List<Component> components, ComponentFilter filter})
             >(
               selector:
                   (context, provider) => (
                     isLoading: provider.isLoading,
                     error: provider.error,
                     components: provider.components,
-                    searchTerm: provider.searchTerm,
-                    categoryFilter: provider.categoryFilter,
+                    filter: provider.filter,
                   ),
               builder: (context, state, child) {
                 if (state.isLoading) {
@@ -102,13 +92,19 @@ class _ComponentsListScreenState extends State<ComponentsListScreen> {
                         const SizedBox(height: 16),
                         Text(state.error!),
                         const SizedBox(height: 16),
-                        ElevatedButton(onPressed: _loadData, child: const Text('Tentar Novamente')),
+                        ElevatedButton(
+                          onPressed: _componentProvider.filterComponents,
+                          child: const Text('Tentar Novamente'),
+                        ),
                       ],
                     ),
                   );
                 }
 
                 if (state.components.isEmpty) {
+                  final hasFilters =
+                      state.filter.searchTerm != null || state.filter.categoryId != null;
+
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -116,14 +112,14 @@ class _ComponentsListScreenState extends State<ComponentsListScreen> {
                         Icon(Icons.inventory_outlined, size: 64, color: Colors.grey[400]),
                         const SizedBox(height: 16),
                         Text(
-                          state.searchTerm.isNotEmpty || state.categoryFilter != null
+                          hasFilters
                               ? 'Nenhum componente encontrado'
                               : 'Nenhum componente cadastrado',
                           style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          state.searchTerm.isNotEmpty || state.categoryFilter != null
+                          hasFilters
                               ? 'Tente ajustar os filtros'
                               : 'Toque no botão + para adicionar',
                           style: TextStyle(fontSize: 14, color: Colors.grey[500]),
@@ -134,7 +130,7 @@ class _ComponentsListScreenState extends State<ComponentsListScreen> {
                 }
 
                 return RefreshIndicator(
-                  onRefresh: () async => _loadData(),
+                  onRefresh: () async => _componentProvider.filterComponents(),
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: state.components.length,
@@ -165,7 +161,7 @@ class _ComponentsListScreenState extends State<ComponentsListScreen> {
   }
 
   Future<void> _navigateToForm(BuildContext context, {Component? component}) async {
-    final result = await Navigator.push(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -178,11 +174,11 @@ class _ComponentsListScreenState extends State<ComponentsListScreen> {
               child: ComponentFormScreen(component: component),
             ),
       ),
-    );
-
-    if (result == true) {
-      _loadData();
-    }
+    ).then((result) {
+      if (result == true) {
+        _componentProvider.filterComponents();
+      }
+    });
   }
 
   Future<void> _confirmDeletion(BuildContext context, Component component) async {

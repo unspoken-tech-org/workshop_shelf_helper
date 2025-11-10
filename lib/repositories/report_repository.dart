@@ -1,5 +1,9 @@
+import 'package:workshop_shelf_helper/models/statistics.dart';
+
 import '../database/interfaces/i_report_repository.dart';
 import '../database/interfaces/i_database.dart';
+import '../models/component_alert.dart';
+import '../models/category_stock.dart';
 
 class ReportRepository implements IReportRepository {
   final IDatabase _database;
@@ -14,7 +18,7 @@ class ReportRepository implements IReportRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> getStatistics() async {
+  Future<Statistics> getStatistics() async {
     final db = await _database.database;
 
     final totalCategoriesResult = await db.rawQuery('SELECT COUNT(*) FROM categories');
@@ -28,21 +32,23 @@ class ReportRepository implements IReportRepository {
     final totalStockItemsResult = await db.rawQuery('SELECT SUM(quantity) FROM components');
     final totalStockItems = totalStockItemsResult.first.values.first as int? ?? 0;
 
-    return {
-      'totalCategories': totalCategories,
-      'totalComponents': totalComponents,
-      'totalValue': totalValue,
-      'totalStockItems': totalStockItems,
-    };
+    final statistics = Statistics(
+      totalCategories: totalCategories,
+      totalComponents: totalComponents,
+      totalValue: totalValue,
+      totalStockItems: totalStockItems,
+    );
+
+    return statistics;
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getStockByCategory() async {
+  Future<List<CategoryStock>> getStockByCategory() async {
     final db = await _database.database;
     final result = await db.rawQuery('''
       SELECT 
         c.id,
-        c.name as category,
+        c.name,
         COUNT(comp.id) as component_count,
         SUM(comp.quantity) as item_quantity,
         SUM(comp.quantity * comp.unit_cost) as total_value
@@ -52,6 +58,61 @@ class ReportRepository implements IReportRepository {
       ORDER BY c.name
     ''');
 
-    return result;
+    return result.map((map) => CategoryStock.fromDatabaseMap(map)).toList();
+  }
+
+  @override
+  Future<List<ComponentAlert>> getLowStockComponents(int threshold) async {
+    final db = await _database.database;
+    final result = await db.rawQuery(
+      '''
+      SELECT c.id, c.model, c.quantity, c.location, c.category_id,
+             cat.name as category_name
+      FROM components c
+      JOIN categories cat ON c.category_id = cat.id
+      WHERE c.quantity < ? AND c.quantity > 0
+      ORDER BY c.quantity ASC
+    ''',
+      [threshold],
+    );
+
+    return result.map((map) => ComponentAlert.fromDatabaseMap(map)).toList();
+  }
+
+  @override
+  Future<List<ComponentAlert>> getOutOfStockComponents() async {
+    final db = await _database.database;
+    final result = await db.rawQuery('''
+      SELECT c.id, c.model, c.quantity, c.location, c.category_id,
+             cat.name as category_name
+      FROM components c
+      JOIN categories cat ON c.category_id = cat.id
+      WHERE c.quantity = 0
+      ORDER BY c.model
+    ''');
+
+    return result.map((map) => ComponentAlert.fromDatabaseMap(map)).toList();
+  }
+
+  @override
+  Future<List<CategoryStock>> getTopCategoriesByValue(int limit) async {
+    final db = await _database.database;
+    final result = await db.rawQuery(
+      '''
+      SELECT c.id, c.name, 
+             COUNT(comp.id) as component_count,
+             SUM(comp.quantity) as item_quantity,
+             SUM(comp.quantity * comp.unit_cost) as total_value
+      FROM categories c
+      LEFT JOIN components comp ON c.id = comp.category_id
+      GROUP BY c.id, c.name
+      HAVING total_value > 0
+      ORDER BY total_value DESC
+      LIMIT ?
+    ''',
+      [limit],
+    );
+
+    return result.map((map) => CategoryStock.fromDatabaseMap(map)).toList();
   }
 }

@@ -353,6 +353,7 @@ class _ComponentFormScreenState extends State<ComponentFormScreen> {
     final component = Component(
       id: widget.component?.id,
       categoryId: _selectedCategory!,
+      categoryName: '',
       model: _modelController.text.trim(),
       quantity: int.parse(_quantityController.text.trim()),
       location: _locationController.text.trim(),

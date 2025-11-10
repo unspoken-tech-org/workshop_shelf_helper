@@ -1,3 +1,5 @@
+import 'package:workshop_shelf_helper/models/component_filter.dart';
+
 import '../database/interfaces/i_component_repository.dart';
 import '../database/interfaces/i_database.dart';
 import '../models/component.dart';
@@ -10,14 +12,14 @@ class ComponentRepository implements IComponentRepository {
   @override
   Future<int> create(Component component) async {
     final db = await _database.database;
-    return await db.insert('components', component.toMap());
+    return await db.insert('components', component.toDatabaseMap());
   }
 
   @override
   Future<List<Component>> getAll() async {
     final db = await _database.database;
     final result = await db.query('components', orderBy: 'model ASC');
-    return result.map((map) => Component.fromMap(map)).toList();
+    return result.map((map) => Component.fromDatabaseMap(map)).toList();
   }
 
   @override
@@ -25,21 +27,9 @@ class ComponentRepository implements IComponentRepository {
     final db = await _database.database;
     final result = await db.query('components', where: 'id = ?', whereArgs: [id]);
     if (result.isNotEmpty) {
-      return Component.fromMap(result.first);
+      return Component.fromDatabaseMap(result.first);
     }
     return null;
-  }
-
-  @override
-  Future<List<Component>> getByCategory(int categoryId) async {
-    final db = await _database.database;
-    final result = await db.query(
-      'components',
-      where: 'category_id = ?',
-      whereArgs: [categoryId],
-      orderBy: 'model ASC',
-    );
-    return result.map((map) => Component.fromMap(map)).toList();
   }
 
   @override
@@ -47,7 +37,7 @@ class ComponentRepository implements IComponentRepository {
     final db = await _database.database;
     return await db.update(
       'components',
-      component.toMap(),
+      component.toDatabaseMap(),
       where: 'id = ?',
       whereArgs: [component.id],
     );
@@ -60,50 +50,51 @@ class ComponentRepository implements IComponentRepository {
   }
 
   @override
-  Future<List<Component>> search({
-    String? searchTerm,
-    int? categoryId,
-    double? minCost,
-    double? maxCost,
-    String? orderBy,
-  }) async {
+  Future<List<Component>> search(ComponentFilter filter) async {
     final db = await _database.database;
 
-    String whereClause = '';
-    List<dynamic> whereArgs = [];
+    String whereClause = 'WHERE 1 = 1';
 
-    if (searchTerm != null && searchTerm.isNotEmpty) {
-      whereClause += '(model LIKE ? OR location LIKE ?)';
-      whereArgs.add('%$searchTerm%');
-      whereArgs.add('%$searchTerm%');
+    if (filter.searchTerm?.isNotEmpty ?? false) {
+      whereClause +=
+          " AND (model LIKE '%${filter.searchTerm}%' OR location LIKE '%${filter.searchTerm}%')";
     }
 
-    if (categoryId != null) {
+    if (filter.categoryId != null) {
       if (whereClause.isNotEmpty) whereClause += ' AND ';
-      whereClause += 'category_id = ?';
-      whereArgs.add(categoryId);
+      whereClause += 'category_id = ${filter.categoryId}';
     }
 
-    if (minCost != null) {
+    if (filter.minCost != null) {
       if (whereClause.isNotEmpty) whereClause += ' AND ';
-      whereClause += 'unit_cost >= ?';
-      whereArgs.add(minCost);
+      whereClause += 'unit_cost >= ${filter.minCost}';
     }
 
-    if (maxCost != null) {
+    if (filter.maxCost != null) {
       if (whereClause.isNotEmpty) whereClause += ' AND ';
-      whereClause += 'unit_cost <= ?';
-      whereArgs.add(maxCost);
+      whereClause += 'unit_cost <= ${filter.maxCost}';
     }
 
-    final result = await db.query(
-      'components',
-      where: whereClause.isNotEmpty ? whereClause : null,
-      whereArgs: whereArgs.isNotEmpty ? whereArgs : null,
-      orderBy: orderBy ?? 'model ASC',
-    );
+    final query = '''
+      SELECT c.id, 
+      c.category_id, 
+      cat.name as category_name, 
+      c.model, 
+      c.quantity, 
+      c.location, 
+      c.polarity, 
+      c.package, 
+      c.unit_cost, 
+      c.notes
+      FROM components c
+      LEFT JOIN categories cat ON c.category_id = cat.id
+      $whereClause
+      ORDER BY ${filter.orderBy}
+      ''';
 
-    return result.map((map) => Component.fromMap(map)).toList();
+    final result = await db.rawQuery(query);
+
+    return result.map((map) => Component.fromDatabaseMap(map)).toList();
   }
 
   @override
@@ -115,6 +106,6 @@ class ComponentRepository implements IComponentRepository {
       whereArgs: [threshold],
       orderBy: 'quantity ASC',
     );
-    return result.map((map) => Component.fromMap(map)).toList();
+    return result.map((map) => Component.fromDatabaseMap(map)).toList();
   }
 }

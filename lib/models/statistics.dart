@@ -11,22 +11,13 @@ class Statistics {
     required this.totalStockItems,
   });
 
-  factory Statistics.fromMap(Map<String, dynamic> map) {
+  factory Statistics.fromDatabaseMap(Map<String, dynamic> map) {
     return Statistics(
       totalCategories: map['totalCategories'] as int? ?? 0,
       totalComponents: map['totalComponents'] as int? ?? 0,
       totalValue: (map['totalValue'] as num?)?.toDouble() ?? 0.0,
       totalStockItems: map['totalStockItems'] as int? ?? 0,
     );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'totalCategories': totalCategories,
-      'totalComponents': totalComponents,
-      'totalValue': totalValue,
-      'totalStockItems': totalStockItems,
-    };
   }
 
   @override

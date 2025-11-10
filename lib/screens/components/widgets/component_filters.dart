@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workshop_shelf_helper/models/category.dart';
+import 'package:workshop_shelf_helper/models/component_filter.dart';
 import 'package:workshop_shelf_helper/providers/category_provider.dart';
 import 'package:workshop_shelf_helper/providers/component_provider.dart';
 
@@ -16,9 +17,9 @@ class ComponentFilters extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Selector<ComponentProvider, int?>(
-            selector: (context, provider) => provider.categoryFilter,
-            builder: (context, categoryFilter, child) {
+          Selector<ComponentProvider, ComponentFilter>(
+            selector: (context, provider) => provider.filter,
+            builder: (context, filter, child) {
               return Selector<CategoryProvider, List<Category>>(
                 selector: (context, provider) => provider.categories,
                 builder: (context, categories, child) {
@@ -26,7 +27,7 @@ class ComponentFilters extends StatelessWidget {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<int?>(
-                          value: categoryFilter,
+                          value: filter.categoryId,
                           decoration: const InputDecoration(
                             labelText: 'Filtrar por categoria',
                             prefixIcon: Icon(Icons.category),
@@ -38,7 +39,7 @@ class ComponentFilters extends StatelessWidget {
                             }),
                           ],
                           onChanged: (value) {
-                            context.read<ComponentProvider>().filterByCategory(value);
+                            context.read<ComponentProvider>().filterComponents(categoryId: value);
                           },
                         ),
                       ),

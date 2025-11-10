@@ -5,6 +5,7 @@ import 'package:workshop_shelf_helper/providers/report_provider.dart';
 import 'package:workshop_shelf_helper/providers/category_provider.dart';
 import 'package:workshop_shelf_helper/providers/component_provider.dart';
 import 'package:workshop_shelf_helper/models/statistics.dart';
+import 'package:workshop_shelf_helper/models/category_stock.dart';
 import 'package:workshop_shelf_helper/services/export_service.dart';
 import 'widgets/general_summary_card.dart';
 import 'widgets/stock_by_category_table.dart';
@@ -80,7 +81,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
-                Selector<ReportProvider, List<Map<String, dynamic>>>(
+                Selector<ReportProvider, List<CategoryStock>>(
                   selector: (context, provider) => provider.stockByCategory,
                   builder: (context, stockByCategory, child) {
                     return StockByCategoryTable(
@@ -115,7 +116,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       final componentProvider = context.read<ComponentProvider>();
       final categoryProvider = context.read<CategoryProvider>();
 
-      final components = componentProvider.allComponents;
+      final components = componentProvider.components;
       final categories = categoryProvider.categories;
 
       final filePath = await _exportService.exportToCSV(components, categories);
@@ -144,7 +145,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       final categoryProvider = context.read<CategoryProvider>();
       final reportProvider = context.read<ReportProvider>();
 
-      final components = componentProvider.allComponents;
+      final components = componentProvider.components;
       final categories = categoryProvider.categories;
       final statistics = reportProvider.statistics;
 
@@ -188,7 +189,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Future<void> _showLowStock() async {
     try {
       final componentProvider = context.read<ComponentProvider>();
-      final components = componentProvider.allComponents.where((c) => c.quantity <= 10).toList();
+      final components = componentProvider.components.where((c) => c.quantity <= 10).toList();
 
       if (!mounted) return;
 

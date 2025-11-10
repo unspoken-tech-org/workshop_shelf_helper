@@ -5,7 +5,7 @@ class Category {
 
   Category({this.id, required this.name, this.description});
 
-  factory Category.fromMap(Map<String, dynamic> map) {
+  factory Category.fromDatabaseMap(Map<String, dynamic> map) {
     return Category(
       id: map['id'] as int?,
       name: map['name'] as String,
@@ -13,7 +13,7 @@ class Category {
     );
   }
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toDatabaseMap() {
     return {'id': id, 'name': name, 'description': description};
   }
 

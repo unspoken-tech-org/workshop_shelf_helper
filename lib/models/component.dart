@@ -1,6 +1,7 @@
 class Component {
   int? id;
   int categoryId;
+  String categoryName;
   String model;
   int quantity;
   String location;
@@ -12,6 +13,7 @@ class Component {
   Component({
     this.id,
     required this.categoryId,
+    required this.categoryName,
     required this.model,
     required this.quantity,
     required this.location,
@@ -21,10 +23,11 @@ class Component {
     this.notes,
   });
 
-  factory Component.fromMap(Map<String, dynamic> map) {
+  factory Component.fromDatabaseMap(Map<String, dynamic> map) {
     return Component(
       id: map['id'] as int?,
       categoryId: map['category_id'] as int,
+      categoryName: map['category_name'] as String,
       model: map['model'] as String,
       quantity: map['quantity'] as int,
       location: map['location'] as String,
@@ -35,7 +38,7 @@ class Component {
     );
   }
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toDatabaseMap() {
     return {
       'id': id,
       'category_id': categoryId,
@@ -53,12 +56,13 @@ class Component {
 
   @override
   String toString() {
-    return 'Component{id: $id, model: $model, quantity: $quantity, location: $location}';
+    return 'Component{id: $id, categoryName: $categoryName, model: $model, quantity: $quantity, location: $location}';
   }
 
   Component copyWith({
     int? id,
     int? categoryId,
+    String? categoryName,
     String? model,
     int? quantity,
     String? location,
@@ -70,6 +74,7 @@ class Component {
     return Component(
       id: id ?? this.id,
       categoryId: categoryId ?? this.categoryId,
+      categoryName: categoryName ?? this.categoryName,
       model: model ?? this.model,
       quantity: quantity ?? this.quantity,
       location: location ?? this.location,

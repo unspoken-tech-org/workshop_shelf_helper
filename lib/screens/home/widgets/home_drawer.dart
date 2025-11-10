@@ -111,7 +111,7 @@ class HomeDrawer extends StatelessWidget {
             title: const Text('Atualizar Dados'),
             onTap: () {
               Navigator.pop(context);
-              context.read<ReportProvider>().loadStatistics();
+              context.read<ReportProvider>().loadDashboardData();
             },
           ),
         ],

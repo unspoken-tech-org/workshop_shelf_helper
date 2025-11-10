@@ -10,14 +10,14 @@ class CategoryRepository implements ICategoryRepository {
   @override
   Future<int> create(Category category) async {
     final db = await _database.database;
-    return await db.insert('categories', category.toMap());
+    return await db.insert('categories', category.toDatabaseMap());
   }
 
   @override
   Future<List<Category>> getAll() async {
     final db = await _database.database;
     final result = await db.query('categories', orderBy: 'name ASC');
-    return result.map((map) => Category.fromMap(map)).toList();
+    return result.map((map) => Category.fromDatabaseMap(map)).toList();
   }
 
   @override
@@ -25,7 +25,7 @@ class CategoryRepository implements ICategoryRepository {
     final db = await _database.database;
     final result = await db.query('categories', where: 'id = ?', whereArgs: [id]);
     if (result.isNotEmpty) {
-      return Category.fromMap(result.first);
+      return Category.fromDatabaseMap(result.first);
     }
     return null;
   }
@@ -35,7 +35,7 @@ class CategoryRepository implements ICategoryRepository {
     final db = await _database.database;
     return await db.update(
       'categories',
-      category.toMap(),
+      category.toDatabaseMap(),
       where: 'id = ?',
       whereArgs: [category.id],
     );

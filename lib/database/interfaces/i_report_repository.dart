@@ -1,5 +1,12 @@
+import 'package:workshop_shelf_helper/models/component_alert.dart';
+import 'package:workshop_shelf_helper/models/category_stock.dart';
+import 'package:workshop_shelf_helper/models/statistics.dart';
+
 abstract class IReportRepository {
   Future<double> getTotalStockValue();
-  Future<Map<String, dynamic>> getStatistics();
-  Future<List<Map<String, dynamic>>> getStockByCategory();
+  Future<Statistics> getStatistics();
+  Future<List<CategoryStock>> getStockByCategory();
+  Future<List<ComponentAlert>> getLowStockComponents(int threshold);
+  Future<List<ComponentAlert>> getOutOfStockComponents();
+  Future<List<CategoryStock>> getTopCategoriesByValue(int limit);
 }

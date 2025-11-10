@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:workshop_shelf_helper/models/category_stock.dart';
 import 'package:workshop_shelf_helper/screens/reports/widgets/table_data_cell.dart';
 import 'package:workshop_shelf_helper/screens/reports/widgets/table_header_cell.dart';
 
 class StockByCategoryTable extends StatelessWidget {
-  final List<Map<String, dynamic>> stockByCategory;
+  final List<CategoryStock> stockByCategory;
   final NumberFormat currencyFormat;
 
   const StockByCategoryTable({
@@ -76,19 +77,10 @@ class StockByCategoryTable extends StatelessWidget {
                   children: [
                     TableRow(
                       children: [
-                        TableDataCell(text: item['category'] ?? 'N/A'),
-                        TableDataCell(
-                          text: (item['component_count'] ?? 0).toString(),
-                          centered: true,
-                        ),
-                        TableDataCell(
-                          text: (item['item_quantity'] ?? 0).toString(),
-                          centered: true,
-                        ),
-                        TableDataCell(
-                          text: currencyFormat.format((item['total_value'] ?? 0.0) as num),
-                          centered: true,
-                        ),
+                        TableDataCell(text: item.name),
+                        TableDataCell(text: item.componentCount.toString(), centered: true),
+                        TableDataCell(text: item.itemQuantity.toString(), centered: true),
+                        TableDataCell(text: currencyFormat.format(item.totalValue), centered: true),
                       ],
                     ),
                   ],
