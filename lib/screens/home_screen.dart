@@ -57,11 +57,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Organizador de Oficina'),
-        centerTitle: true,
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
       drawer: const HomeDrawer(),
       body: Selector<ReportProvider, bool>(
         selector: (context, provider) => provider.isLoading,
@@ -80,6 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 20,
               children: [
                 Text(
                   'Dashboard',
@@ -87,15 +83,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     context,
                   ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 20),
                 const QuickSearchBar(),
-                const SizedBox(height: 20),
                 const RestockAlertsSection(),
-                const SizedBox(height: 24),
                 const DashboardSummaryCards(),
-                const SizedBox(height: 24),
                 const TopCategoriesSection(),
-                const SizedBox(height: 24),
                 const QuickActionsSection(),
               ],
             ),
