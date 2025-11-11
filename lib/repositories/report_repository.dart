@@ -80,6 +80,29 @@ class ReportRepository implements IReportRepository {
   }
 
   @override
+  Future<List<ComponentAlert>> getLowStockComponentsPaginated(
+    int threshold,
+    int offset,
+    int limit,
+  ) async {
+    final db = await _database.database;
+    final result = await db.rawQuery(
+      '''
+      SELECT c.id, c.model, c.quantity, c.location, c.category_id,
+             cat.name as category_name
+      FROM components c
+      JOIN categories cat ON c.category_id = cat.id
+      WHERE c.quantity < ? AND c.quantity > 0
+      ORDER BY c.quantity ASC
+      LIMIT ? OFFSET ?
+    ''',
+      [threshold, limit, offset],
+    );
+
+    return result.map((map) => ComponentAlert.fromDatabaseMap(map)).toList();
+  }
+
+  @override
   Future<List<ComponentAlert>> getOutOfStockComponents() async {
     final db = await _database.database;
     final result = await db.rawQuery('''

@@ -7,6 +7,7 @@ abstract class IReportRepository {
   Future<Statistics> getStatistics();
   Future<List<CategoryStock>> getStockByCategory();
   Future<List<ComponentAlert>> getLowStockComponents(int threshold);
+  Future<List<ComponentAlert>> getLowStockComponentsPaginated(int threshold, int offset, int limit);
   Future<List<ComponentAlert>> getOutOfStockComponents();
   Future<List<CategoryStock>> getTopCategoriesByValue(int limit);
 }

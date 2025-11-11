@@ -6,7 +6,7 @@
     "dart.lineLength": 100,
     
     // Hot Reload
-    "dart.flutterHotReloadOnSave": "always",
+    "dart.flutterHotReloadOnSave": "all",
     
     // Análise de código
     "dart.analysisExcludedFolders": [

@@ -15,7 +15,12 @@ class ReportProvider with ChangeNotifier {
   List<CategoryStock> _topCategoriesByValue = [];
 
   bool _isLoading = false;
+  bool _isLoadingMore = false;
   String? _error;
+
+  int _currentPage = 0;
+  final int _pageSize = 10;
+  bool _hasMoreLowStockItems = true;
 
   ReportProvider({required IReportRepository repository}) : _repository = repository;
 
@@ -28,121 +33,114 @@ class ReportProvider with ChangeNotifier {
   int get outOfStockCount => _outOfStockComponents.length;
   List<CategoryStock> get topCategoriesByValue => _topCategoriesByValue;
   bool get isLoading => _isLoading;
+  bool get isLoadingMore => _isLoadingMore;
+  bool get hasMoreLowStockItems => _hasMoreLowStockItems;
   String? get error => _error;
 
-  void loadTotalStockValue() {
+  void loadTotalStockValue() async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
-    _repository
-        .getTotalStockValue()
-        .then((value) {
-          _totalStockValue = value;
-          _isLoading = false;
-          notifyListeners();
-        })
-        .catchError((e) {
-          _error = 'Erro ao carregar valor total do estoque: $e';
-          _isLoading = false;
-          notifyListeners();
-        });
+    try {
+      _totalStockValue = await _repository.getTotalStockValue();
+    } catch (e) {
+      _error = 'Erro ao carregar valor total do estoque: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
-  void loadStatistics() {
+  void loadStatistics() async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
-    _repository
-        .getStatistics()
-        .then((statisticsData) {
-          _statistics = statisticsData;
-          _isLoading = false;
-          notifyListeners();
-        })
-        .catchError((e) {
-          _error = 'Erro ao carregar estatísticas: $e';
-          _isLoading = false;
-          notifyListeners();
-        });
+    try {
+      _statistics = await _repository.getStatistics();
+    } catch (e) {
+      _error = 'Erro ao carregar estatísticas: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
-  void loadStockByCategory() {
+  void loadStockByCategory() async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
-    _repository
-        .getStockByCategory()
-        .then((stock) {
-          _stockByCategory = stock;
-          _isLoading = false;
-          notifyListeners();
-        })
-        .catchError((e) {
-          _error = 'Erro ao carregar estoque por categoria: $e';
-          _isLoading = false;
-          notifyListeners();
-        });
+    try {
+      _stockByCategory = await _repository.getStockByCategory();
+    } catch (e) {
+      _error = 'Erro ao carregar estoque por categoria: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
-  void loadAllReports() {
+  void loadAllReports() async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
-    _repository
-        .getTotalStockValue()
-        .then((value) {
-          _totalStockValue = value;
-          return _repository.getStatistics();
-        })
-        .then((statisticsData) {
-          _statistics = statisticsData;
-          return _repository.getStockByCategory();
-        })
-        .then((stock) {
-          _stockByCategory = stock;
-          _isLoading = false;
-          notifyListeners();
-        })
-        .catchError((e) {
-          _error = 'Erro ao carregar relatórios: $e';
-          _isLoading = false;
-          notifyListeners();
-        });
+    try {
+      _totalStockValue = await _repository.getTotalStockValue();
+      _statistics = await _repository.getStatistics();
+      _stockByCategory = await _repository.getStockByCategory();
+    } catch (e) {
+      _error = 'Erro ao carregar relatórios: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
-  void loadDashboardData() {
+  void loadDashboardData() async {
     _isLoading = true;
     _error = null;
+    _currentPage = 0;
+    _hasMoreLowStockItems = true;
     notifyListeners();
 
-    _repository
-        .getStatistics()
-        .then((statisticsData) {
-          _statistics = statisticsData;
-          return _repository.getLowStockComponents(10); // threshold = 10 (RN015)
-        })
-        .then((lowStock) {
-          _lowStockComponents = lowStock;
-          return _repository.getOutOfStockComponents();
-        })
-        .then((outOfStock) {
-          _outOfStockComponents = outOfStock;
-          return _repository.getTopCategoriesByValue(3);
-        })
-        .then((topCategories) {
-          _topCategoriesByValue = topCategories;
-          _isLoading = false;
-          notifyListeners();
-        })
-        .catchError((e) {
-          _error = 'Erro ao carregar dados do dashboard: $e';
-          _isLoading = false;
-          notifyListeners();
-        });
+    try {
+      _statistics = await _repository.getStatistics();
+      _lowStockComponents = await _repository.getLowStockComponentsPaginated(10, 0, _pageSize);
+      _hasMoreLowStockItems = _lowStockComponents.length == _pageSize;
+      _outOfStockComponents = await _repository.getOutOfStockComponents();
+      _topCategoriesByValue = await _repository.getTopCategoriesByValue(3);
+    } catch (e) {
+      _error = 'Erro ao carregar dados do dashboard: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadMoreLowStockComponents() async {
+    if (_isLoadingMore || !_hasMoreLowStockItems) return;
+
+    _isLoadingMore = true;
+    notifyListeners();
+
+    try {
+      _currentPage++;
+      final offset = _currentPage * _pageSize;
+      final newComponents = await _repository.getLowStockComponentsPaginated(10, offset, _pageSize);
+
+      _lowStockComponents.addAll(newComponents);
+      _hasMoreLowStockItems = newComponents.length == _pageSize;
+      _isLoadingMore = false;
+      notifyListeners();
+    } catch (e) {
+      _error = 'Erro ao carregar mais componentes: $e';
+      _isLoadingMore = false;
+      _currentPage--;
+      notifyListeners();
+    }
   }
 
   void clearError() {
