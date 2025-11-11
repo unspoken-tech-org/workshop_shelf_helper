@@ -3,6 +3,7 @@ import 'package:workshop_shelf_helper/models/component_filter.dart';
 import '../database/interfaces/i_component_repository.dart';
 import '../database/interfaces/i_database.dart';
 import '../models/component.dart';
+import '../mappers/component_mapper.dart';
 import '../utils/text_normalizer.dart';
 
 class ComponentRepository implements IComponentRepository {
@@ -13,7 +14,8 @@ class ComponentRepository implements IComponentRepository {
   @override
   Future<int> create(Component component) async {
     final db = await _database.database;
-    return await db.insert('components', component.toDatabaseMap());
+    final entity = ComponentMapper.toEntity(component);
+    return await db.insert('components', entity.toDatabaseMap());
   }
 
   @override
@@ -53,9 +55,10 @@ class ComponentRepository implements IComponentRepository {
   @override
   Future<int> update(Component component) async {
     final db = await _database.database;
+    final entity = ComponentMapper.toEntity(component);
     return await db.update(
       'components',
-      component.toDatabaseMap(),
+      entity.toDatabaseMap(),
       where: 'id = ?',
       whereArgs: [component.id],
     );

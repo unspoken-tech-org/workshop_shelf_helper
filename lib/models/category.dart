@@ -1,5 +1,3 @@
-import '../utils/text_normalizer.dart';
-
 class Category {
   int? id;
   String name;
@@ -13,15 +11,6 @@ class Category {
       name: map['name'] as String,
       description: map['description'] as String?,
     );
-  }
-
-  Map<String, dynamic> toDatabaseMap() {
-    return {
-      'id': id,
-      'name': name,
-      'name_normalized': normalizeText(name),
-      'description': description,
-    };
   }
 
   @override

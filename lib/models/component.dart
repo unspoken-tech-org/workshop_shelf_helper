@@ -1,5 +1,3 @@
-import '../utils/text_normalizer.dart';
-
 class Component {
   int? id;
   int categoryId;
@@ -25,6 +23,8 @@ class Component {
     this.notes,
   });
 
+  double get totalValue => quantity * unitCost;
+
   factory Component.fromDatabaseMap(Map<String, dynamic> map) {
     return Component(
       id: map['id'] as int?,
@@ -39,24 +39,6 @@ class Component {
       notes: map['notes'] as String?,
     );
   }
-
-  Map<String, dynamic> toDatabaseMap() {
-    return {
-      'id': id,
-      'category_id': categoryId,
-      'model': model,
-      'model_normalized': normalizeText(model),
-      'quantity': quantity,
-      'location': location,
-      'location_normalized': normalizeText(location),
-      'polarity': polarity,
-      'package': package,
-      'unit_cost': unitCost,
-      'notes': notes,
-    };
-  }
-
-  double get totalValue => quantity * unitCost;
 
   @override
   String toString() {

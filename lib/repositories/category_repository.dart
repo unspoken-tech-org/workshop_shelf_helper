@@ -1,6 +1,7 @@
 import '../database/interfaces/i_category_repository.dart';
 import '../database/interfaces/i_database.dart';
 import '../models/category.dart';
+import '../mappers/category_mapper.dart';
 
 class CategoryRepository implements ICategoryRepository {
   final IDatabase _database;
@@ -10,7 +11,8 @@ class CategoryRepository implements ICategoryRepository {
   @override
   Future<int> create(Category category) async {
     final db = await _database.database;
-    return await db.insert('categories', category.toDatabaseMap());
+    final entity = CategoryMapper.toEntity(category);
+    return await db.insert('categories', entity.toDatabaseMap());
   }
 
   @override
@@ -33,9 +35,10 @@ class CategoryRepository implements ICategoryRepository {
   @override
   Future<int> update(Category category) async {
     final db = await _database.database;
+    final entity = CategoryMapper.toEntity(category);
     return await db.update(
       'categories',
-      category.toDatabaseMap(),
+      entity.toDatabaseMap(),
       where: 'id = ?',
       whereArgs: [category.id],
     );
