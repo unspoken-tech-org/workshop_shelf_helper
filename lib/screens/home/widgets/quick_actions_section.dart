@@ -41,7 +41,7 @@ class QuickActionsSection extends StatelessWidget {
                         child: const CategoriesListScreen(),
                       ),
                 ),
-              ),
+              ).then((_) => context.read<ReportProvider>().loadDashboardData()),
         ),
         const SizedBox(height: 12),
         ActionButton(
@@ -62,7 +62,7 @@ class QuickActionsSection extends StatelessWidget {
                         child: const ComponentsListScreen(),
                       ),
                 ),
-              ),
+              ).then((_) => context.read<ReportProvider>().loadDashboardData()),
         ),
         const SizedBox(height: 12),
         ActionButton(
@@ -83,7 +83,7 @@ class QuickActionsSection extends StatelessWidget {
                         child: const ReportsScreen(),
                       ),
                 ),
-              ),
+              ).then((_) => context.read<ReportProvider>().loadDashboardData()),
         ),
         // Debug button - only shows in debug mode
         if (kDebugMode) ...[

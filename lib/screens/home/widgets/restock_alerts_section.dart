@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workshop_shelf_helper/models/component_alert.dart';
+import 'package:workshop_shelf_helper/providers/category_provider.dart';
+import 'package:workshop_shelf_helper/providers/component_provider.dart';
 import 'package:workshop_shelf_helper/providers/report_provider.dart';
+import 'package:workshop_shelf_helper/screens/components/component_form_screen.dart';
 import 'package:workshop_shelf_helper/screens/home/widgets/component_alert_card.dart';
 import 'package:workshop_shelf_helper/screens/home/widgets/no_replenishment_card.dart';
 
@@ -76,10 +79,36 @@ class _RestockAlertsSectionState extends State<RestockAlertsSection> {
                     );
                   }
 
+                  final component = data.components[index];
+
                   return SizedBox(
                     width: 200,
                     height: 200,
-                    child: ComponentAlertCard(alert: data.components[index]),
+                    child: ComponentAlertCard(
+                      alert: component,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (_) => MultiProvider(
+                                  providers: [
+                                    ChangeNotifierProvider.value(
+                                      value: context.read<ComponentProvider>(),
+                                    ),
+                                    ChangeNotifierProvider.value(
+                                      value: context.read<CategoryProvider>(),
+                                    ),
+                                    ChangeNotifierProvider.value(
+                                      value: context.read<ReportProvider>(),
+                                    ),
+                                  ],
+                                  child: ComponentFormScreen(componentId: component.id),
+                                ),
+                          ),
+                        );
+                      },
+                    ),
                   );
                 },
               ),

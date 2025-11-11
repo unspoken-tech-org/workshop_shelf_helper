@@ -136,11 +136,9 @@ class _ComponentsListScreenState extends State<ComponentsListScreen> {
                     itemCount: state.components.length,
                     itemBuilder: (context, index) {
                       final component = state.components[index];
-                      final categoryProvider = context.read<CategoryProvider>();
-                      final category = categoryProvider.getCategoryById(component.categoryId);
                       return ComponentCard(
                         component: component,
-                        category: category,
+                        categoryName: component.categoryName,
                         currencyFormat: _currencyFormat,
                         onEdit: () => _navigateToForm(context, component: component),
                         onDelete: () => _confirmDeletion(context, component),
@@ -171,14 +169,10 @@ class _ComponentsListScreenState extends State<ComponentsListScreen> {
                 ChangeNotifierProvider.value(value: context.read<ComponentProvider>()),
                 ChangeNotifierProvider.value(value: context.read<ReportProvider>()),
               ],
-              child: ComponentFormScreen(component: component),
+              child: ComponentFormScreen(componentId: component?.id),
             ),
       ),
-    ).then((result) {
-      if (result == true) {
-        _componentProvider.filterComponents();
-      }
-    });
+    ).then((_) => _componentProvider.filterComponents());
   }
 
   Future<void> _confirmDeletion(BuildContext context, Component component) async {

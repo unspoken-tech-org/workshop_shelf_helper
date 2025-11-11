@@ -5,12 +5,14 @@ import 'package:workshop_shelf_helper/models/category.dart';
 class CategoryProvider with ChangeNotifier {
   final ICategoryRepository _repository;
   List<Category> _categories = [];
+  Category? _selectedCategory;
   bool _isLoading = false;
   String? _error;
 
   CategoryProvider({required ICategoryRepository repository}) : _repository = repository;
 
   List<Category> get categories => _categories;
+  Category? get selectedCategory => _selectedCategory;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -78,11 +80,17 @@ class CategoryProvider with ChangeNotifier {
     }
   }
 
-  Category? getCategoryById(int id) {
+  void getCategoryById(int id) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
     try {
-      return _categories.firstWhere((c) => c.id == id);
+      _selectedCategory = await _repository.getById(id);
     } catch (e) {
-      return null;
+      _error = 'Erro ao carregar categoria: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 

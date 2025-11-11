@@ -10,11 +10,13 @@ class ComponentProvider with ChangeNotifier {
   String? _error;
 
   ComponentFilter _filter = ComponentFilter();
+  Component? _selectedComponent;
 
   ComponentProvider({required IComponentRepository repository}) : _repository = repository;
 
   ComponentFilter get filter => _filter;
   List<Component> get components => _filteredComponents;
+  Component? get selectedComponent => _selectedComponent;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -29,6 +31,20 @@ class ComponentProvider with ChangeNotifier {
 
     try {
       _filteredComponents = await _repository.search(_filter);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void getById(int id) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      _selectedComponent = await _repository.getById(id);
+    } catch (e) {
+      _error = 'Erro ao carregar componente: $e';
     } finally {
       _isLoading = false;
       notifyListeners();

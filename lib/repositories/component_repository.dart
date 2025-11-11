@@ -26,10 +26,27 @@ class ComponentRepository implements IComponentRepository {
   @override
   Future<Component?> getById(int id) async {
     final db = await _database.database;
-    final result = await db.query('components', where: 'id = ?', whereArgs: [id]);
+    final query = '''
+      SELECT c.id, 
+      c.category_id, 
+      cat.name as category_name, 
+      c.model, 
+      c.quantity, 
+      c.location, 
+      c.polarity, 
+      c.package, 
+      c.unit_cost, 
+      c.notes
+      FROM components c
+      LEFT JOIN categories cat ON c.category_id = cat.id
+      WHERE c.id = ?
+      ''';
+    final result = await db.rawQuery(query, [id]);
+
     if (result.isNotEmpty) {
       return Component.fromDatabaseMap(result.first);
     }
+
     return null;
   }
 

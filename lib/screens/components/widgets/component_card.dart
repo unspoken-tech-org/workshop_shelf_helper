@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:workshop_shelf_helper/models/category.dart';
 import 'package:workshop_shelf_helper/models/component.dart';
 import 'package:workshop_shelf_helper/providers/component_provider.dart';
 import 'package:workshop_shelf_helper/screens/components/widgets/detail_row.dart';
@@ -9,7 +8,7 @@ import 'package:workshop_shelf_helper/screens/components/widgets/quantity_contro
 
 class ComponentCard extends StatelessWidget {
   final Component component;
-  final Category? category;
+  final String categoryName;
   final NumberFormat currencyFormat;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -17,7 +16,7 @@ class ComponentCard extends StatelessWidget {
   const ComponentCard({
     super.key,
     required this.component,
-    required this.category,
+    required this.categoryName,
     required this.currencyFormat,
     required this.onEdit,
     required this.onDelete,
@@ -39,14 +38,13 @@ class ComponentCard extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (category != null)
-              Text(
-                category!.name,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w500,
-                ),
+            Text(
+              categoryName,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w500,
               ),
+            ),
             Text('Local: ${component.location}'),
             const SizedBox(height: 4),
             QuantityControl(
