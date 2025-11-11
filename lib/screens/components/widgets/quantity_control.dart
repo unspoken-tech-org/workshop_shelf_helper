@@ -25,7 +25,7 @@ class _QuantityControlState extends State<QuantityControl> {
   void initState() {
     super.initState();
     _currentQuantity = widget.initialQuantity;
-    _debouncer = Debouncer(delay: const Duration(seconds: 3));
+    _debouncer = Debouncer(delay: const Duration(milliseconds: 200));
   }
 
   @override

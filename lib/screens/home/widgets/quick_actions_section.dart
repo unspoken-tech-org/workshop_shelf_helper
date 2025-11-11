@@ -163,7 +163,7 @@ Future<void> resetWithMockData(BuildContext context) async {
 
     // Reload data
     if (context.mounted) {
-      context.read<ReportProvider>().loadStatistics();
+      context.read<ReportProvider>().loadDashboardData();
     }
 
     // Close loading

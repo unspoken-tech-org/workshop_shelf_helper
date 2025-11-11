@@ -85,6 +85,7 @@ class _RestockAlertsSectionState extends State<RestockAlertsSection> {
                     width: 200,
                     height: 200,
                     child: ComponentAlertCard(
+                      key: Key('${component.id}-${component.quantity}'),
                       alert: component,
                       onTap: () {
                         Navigator.push(
@@ -106,7 +107,9 @@ class _RestockAlertsSectionState extends State<RestockAlertsSection> {
                                   child: ComponentFormScreen(componentId: component.id),
                                 ),
                           ),
-                        );
+                        ).then((_) {
+                          context.read<ReportProvider>().loadDashboardData();
+                        });
                       },
                     ),
                   );
