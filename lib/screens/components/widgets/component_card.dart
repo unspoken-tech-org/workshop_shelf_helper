@@ -26,11 +26,14 @@ class ComponentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ExpansionTile(
         leading: CircleAvatar(
           backgroundColor: Theme.of(context).colorScheme.primary,
           child: const Icon(Icons.memory, color: Colors.white),
         ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(
           component.model,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
