@@ -19,6 +19,7 @@ class ComponentProvider with ChangeNotifier {
   Component? get selectedComponent => _selectedComponent;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  IComponentRepository get repository => _repository;
 
   void init() {
     _loadComponents();

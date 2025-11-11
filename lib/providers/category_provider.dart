@@ -15,6 +15,7 @@ class CategoryProvider with ChangeNotifier {
   Category? get selectedCategory => _selectedCategory;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  ICategoryRepository get repository => _repository;
 
   void loadCategories() {
     _isLoading = true;

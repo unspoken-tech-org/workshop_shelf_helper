@@ -23,7 +23,8 @@ class GridActionButton extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
+            spacing: 12,
             children: [
               Container(
                 padding: const EdgeInsets.all(16),
@@ -33,7 +34,6 @@ class GridActionButton extends StatelessWidget {
                 ),
                 child: Icon(icon, color: color, size: 32),
               ),
-              const SizedBox(height: 12),
               Text(
                 title,
                 style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),

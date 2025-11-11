@@ -21,7 +21,22 @@ class ComponentRepository implements IComponentRepository {
   @override
   Future<List<Component>> getAll() async {
     final db = await _database.database;
-    final result = await db.query('components', orderBy: 'model ASC');
+    final query = '''
+      SELECT c.id, 
+      c.category_id, 
+      cat.name as category_name, 
+      c.model, 
+      c.quantity, 
+      c.location, 
+      c.polarity, 
+      c.package, 
+      c.unit_cost, 
+      c.notes
+      FROM components c
+      LEFT JOIN categories cat ON c.category_id = cat.id
+      ORDER BY c.model ASC
+      ''';
+    final result = await db.rawQuery(query);
     return result.map((map) => Component.fromDatabaseMap(map)).toList();
   }
 

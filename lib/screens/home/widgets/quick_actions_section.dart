@@ -7,6 +7,7 @@ import 'package:workshop_shelf_helper/screens/categories/categories_list_screen.
 import 'package:workshop_shelf_helper/screens/components/components_list_screen.dart';
 import 'package:workshop_shelf_helper/screens/home/widgets/grid_action_button.dart';
 import 'package:workshop_shelf_helper/screens/reports/reports_screen.dart';
+import 'package:workshop_shelf_helper/screens/import/import_screen.dart';
 
 class QuickActionsSection extends StatelessWidget {
   const QuickActionsSection({super.key});
@@ -21,94 +22,129 @@ class QuickActionsSection extends StatelessWidget {
           'Ações Rápidas',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
-        Row(
-          spacing: 12,
-          children: [
-            SizedBox(
-              width: 140,
-              height: 140,
-              child: GridActionButton(
-                title: 'Categorias',
-                icon: Icons.category,
-                color: Colors.blue,
-                onTap:
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (_) => MultiProvider(
-                              providers: [
-                                ChangeNotifierProvider.value(
-                                  value: context.read<CategoryProvider>(),
-                                ),
-                                ChangeNotifierProvider.value(
-                                  value: context.read<ComponentProvider>(),
-                                ),
-                                ChangeNotifierProvider.value(value: context.read<ReportProvider>()),
-                              ],
-                              child: const CategoriesListScreen(),
-                            ),
-                      ),
-                    ).then((_) => context.read<ReportProvider>().loadDashboardData()),
+        SizedBox(
+          height: 160,
+          child: Row(
+            spacing: 12,
+            children: [
+              SizedBox(
+                width: 140,
+                child: GridActionButton(
+                  title: 'Categorias',
+                  icon: Icons.category,
+                  color: Colors.blue,
+                  onTap:
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => MultiProvider(
+                                providers: [
+                                  ChangeNotifierProvider.value(
+                                    value: context.read<CategoryProvider>(),
+                                  ),
+                                  ChangeNotifierProvider.value(
+                                    value: context.read<ComponentProvider>(),
+                                  ),
+                                  ChangeNotifierProvider.value(
+                                    value: context.read<ReportProvider>(),
+                                  ),
+                                ],
+                                child: const CategoriesListScreen(),
+                              ),
+                        ),
+                      ).then((_) => context.read<ReportProvider>().loadDashboardData()),
+                ),
               ),
-            ),
-            SizedBox(
-              width: 140,
-              height: 140,
-              child: GridActionButton(
-                title: 'Componentes',
-                icon: Icons.inventory,
-                color: Colors.green,
-                onTap:
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (_) => MultiProvider(
-                              providers: [
-                                ChangeNotifierProvider.value(
-                                  value: context.read<CategoryProvider>(),
-                                ),
-                                ChangeNotifierProvider.value(
-                                  value: context.read<ComponentProvider>(),
-                                ),
-                                ChangeNotifierProvider.value(value: context.read<ReportProvider>()),
-                              ],
-                              child: const ComponentsListScreen(),
-                            ),
-                      ),
-                    ).then((_) => context.read<ReportProvider>().loadDashboardData()),
+              SizedBox(
+                width: 140,
+                child: GridActionButton(
+                  title: 'Componentes',
+                  icon: Icons.inventory,
+                  color: Colors.green,
+                  onTap:
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => MultiProvider(
+                                providers: [
+                                  ChangeNotifierProvider.value(
+                                    value: context.read<CategoryProvider>(),
+                                  ),
+                                  ChangeNotifierProvider.value(
+                                    value: context.read<ComponentProvider>(),
+                                  ),
+                                  ChangeNotifierProvider.value(
+                                    value: context.read<ReportProvider>(),
+                                  ),
+                                ],
+                                child: const ComponentsListScreen(),
+                              ),
+                        ),
+                      ).then((_) => context.read<ReportProvider>().loadDashboardData()),
+                ),
               ),
-            ),
-            SizedBox(
-              width: 140,
-              height: 140,
-              child: GridActionButton(
-                title: 'Relatórios',
-                icon: Icons.assessment,
-                color: Colors.purple,
-                onTap:
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (_) => MultiProvider(
-                              providers: [
-                                ChangeNotifierProvider.value(
-                                  value: context.read<CategoryProvider>(),
-                                ),
-                                ChangeNotifierProvider.value(
-                                  value: context.read<ComponentProvider>(),
-                                ),
-                                ChangeNotifierProvider.value(value: context.read<ReportProvider>()),
-                              ],
-                              child: const ReportsScreen(),
-                            ),
-                      ),
-                    ).then((_) => context.read<ReportProvider>().loadDashboardData()),
+              SizedBox(
+                width: 140,
+                child: GridActionButton(
+                  title: 'Relatórios',
+                  icon: Icons.assessment,
+                  color: Colors.purple,
+                  onTap:
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => MultiProvider(
+                                providers: [
+                                  ChangeNotifierProvider.value(
+                                    value: context.read<CategoryProvider>(),
+                                  ),
+                                  ChangeNotifierProvider.value(
+                                    value: context.read<ComponentProvider>(),
+                                  ),
+                                  ChangeNotifierProvider.value(
+                                    value: context.read<ReportProvider>(),
+                                  ),
+                                ],
+                                child: const ReportsScreen(),
+                              ),
+                        ),
+                      ).then((_) => context.read<ReportProvider>().loadDashboardData()),
+                ),
               ),
-            ),
-          ],
+              SizedBox(
+                width: 140,
+                child: GridActionButton(
+                  title: 'Importar Dados',
+                  icon: Icons.import_export,
+                  color: Colors.orange,
+                  onTap:
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => MultiProvider(
+                                providers: [
+                                  ChangeNotifierProvider.value(
+                                    value: context.read<CategoryProvider>(),
+                                  ),
+                                  ChangeNotifierProvider.value(
+                                    value: context.read<ComponentProvider>(),
+                                  ),
+                                  ChangeNotifierProvider.value(
+                                    value: context.read<ReportProvider>(),
+                                  ),
+                                ],
+                                child: const ImportScreen(),
+                              ),
+                        ),
+                      ).then((_) => context.read<ReportProvider>().loadDashboardData()),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
