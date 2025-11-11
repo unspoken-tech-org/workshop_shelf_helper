@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import '../../utils/text_normalizer.dart';
 import 'database_seeder.dart';
 
 class CategorySeeder implements DatabaseSeeder {
@@ -19,7 +20,11 @@ class CategorySeeder implements DatabaseSeeder {
     ];
 
     for (final category in categories) {
-      await db.insert('categories', category);
+      final categoryData = {
+        ...category,
+        'name_normalized': normalizeText(category['name'] as String),
+      };
+      await db.insert('categories', categoryData);
     }
 
     debugPrint('  ✓ ${categories.length} categories added');

@@ -1,3 +1,5 @@
+import '../utils/text_normalizer.dart';
+
 class Component {
   int? id;
   int categoryId;
@@ -43,8 +45,10 @@ class Component {
       'id': id,
       'category_id': categoryId,
       'model': model,
+      'model_normalized': normalizeText(model),
       'quantity': quantity,
       'location': location,
+      'location_normalized': normalizeText(location),
       'polarity': polarity,
       'package': package,
       'unit_cost': unitCost,

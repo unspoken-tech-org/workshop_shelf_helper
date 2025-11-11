@@ -3,6 +3,7 @@ import 'package:workshop_shelf_helper/models/component_filter.dart';
 import '../database/interfaces/i_component_repository.dart';
 import '../database/interfaces/i_database.dart';
 import '../models/component.dart';
+import '../utils/text_normalizer.dart';
 
 class ComponentRepository implements IComponentRepository {
   final IDatabase _database;
@@ -56,8 +57,9 @@ class ComponentRepository implements IComponentRepository {
     String whereClause = 'WHERE 1 = 1';
 
     if (filter.searchTerm?.isNotEmpty ?? false) {
+      final normalizedSearchTerm = normalizeText(filter.searchTerm!);
       whereClause +=
-          " AND (model LIKE '%${filter.searchTerm}%' OR location LIKE '%${filter.searchTerm}%')";
+          " AND (model_normalized LIKE '%$normalizedSearchTerm%' OR location_normalized LIKE '%$normalizedSearchTerm%')";
     }
 
     if (filter.categoryId != null) {

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import '../../utils/text_normalizer.dart';
 import 'database_seeder.dart';
 
 class ComponentSeeder implements DatabaseSeeder {
@@ -156,7 +157,12 @@ class ComponentSeeder implements DatabaseSeeder {
     ];
 
     for (final component in components) {
-      await db.insert('components', component);
+      final componentData = {
+        ...component,
+        'model_normalized': normalizeText(component['model'] as String),
+        'location_normalized': normalizeText(component['location'] as String),
+      };
+      await db.insert('components', componentData);
     }
 
     debugPrint('  ✓ ${components.length} components added');
