@@ -35,33 +35,30 @@ class DashboardSummaryCards extends StatelessWidget {
               return const Center(child: Text('Nenhuma estatística disponível'));
             }
 
-            return GridView.count(
-              crossAxisCount: 4,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 1.5,
-              children: [
-                DashboardCard(
-                  title: 'Valor Total',
-                  value: statistics.totalValue.toCurrency(),
-                  icon: Icons.attach_money,
-                  color: Colors.green,
-                ),
-                DashboardCard(
-                  title: 'Itens em Estoque',
-                  value: statistics.totalStockItems.toString(),
-                  icon: Icons.inventory,
-                  color: Colors.blue,
-                ),
-                DashboardCard(
-                  title: 'Esgotados',
-                  value: data.outOfStockCount.toString(),
-                  icon: Icons.block,
-                  color: Colors.red,
-                ),
-              ],
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  DashboardCard(
+                    title: 'Valor Total',
+                    value: statistics.totalValue.toCurrency(),
+                    icon: Icons.attach_money,
+                    color: Colors.green,
+                  ),
+                  DashboardCard(
+                    title: 'Itens em Estoque',
+                    value: statistics.totalStockItems.toString(),
+                    icon: Icons.inventory,
+                    color: Colors.blue,
+                  ),
+                  DashboardCard(
+                    title: 'Esgotados',
+                    value: data.outOfStockCount.toString(),
+                    icon: Icons.block,
+                    color: Colors.red,
+                  ),
+                ],
+              ),
             );
           },
         ),
