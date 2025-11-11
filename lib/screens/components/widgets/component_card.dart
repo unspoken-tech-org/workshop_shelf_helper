@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:workshop_shelf_helper/models/category.dart';
 import 'package:workshop_shelf_helper/models/component.dart';
+import 'package:workshop_shelf_helper/providers/component_provider.dart';
 import 'package:workshop_shelf_helper/screens/components/widgets/detail_row.dart';
+import 'package:workshop_shelf_helper/screens/components/widgets/quantity_control.dart';
 
 class ComponentCard extends StatelessWidget {
   final Component component;
@@ -44,8 +47,15 @@ class ComponentCard extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-            Text('Estoque: ${component.quantity} unidades'),
             Text('Local: ${component.location}'),
+            const SizedBox(height: 4),
+            QuantityControl(
+              initialQuantity: component.quantity,
+              componentId: component.id!,
+              onQuantityChange: (componentId, newQuantity) {
+                context.read<ComponentProvider>().updateComponentQuantity(componentId, newQuantity);
+              },
+            ),
           ],
         ),
         trailing: Row(

@@ -78,6 +78,25 @@ class ComponentProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> updateComponentQuantity(int componentId, int newQuantity) async {
+    try {
+      final component = _filteredComponents.firstWhere((c) => c.id == componentId);
+      final updatedComponent = component.copyWith(quantity: newQuantity);
+      await _repository.update(updatedComponent);
+
+      final index = _filteredComponents.indexWhere((c) => c.id == componentId);
+      if (index != -1) {
+        _filteredComponents[index] = updatedComponent;
+      }
+      return true;
+    } catch (e) {
+      _error = 'Erro ao atualizar quantidade: $e';
+      return false;
+    } finally {
+      notifyListeners();
+    }
+  }
+
   void filterComponents({
     String? searchTerm,
     int? categoryId,
