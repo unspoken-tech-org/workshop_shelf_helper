@@ -54,6 +54,3 @@ windows/flutter/ephemeral/
 # Generated files
 *.g.dart
 *.freezed.dart
-
-# Environment variables
-.env
