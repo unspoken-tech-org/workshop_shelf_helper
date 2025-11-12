@@ -106,9 +106,9 @@ class UpdateDialog extends StatelessWidget {
                     Text(
                       updateInfo.latestVersion,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue.shade700,
-                      ),
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue.shade700,
+                          ),
                     ),
                   ],
                 ),
@@ -145,7 +145,7 @@ class UpdateDialog extends StatelessWidget {
   }
 
   Widget _buildPublishDate(BuildContext context) {
-    final dateFormatter = DateFormat('dd/MM/yyyy HH:mm', 'pt_BR');
+    final dateFormatter = DateFormat('dd/MM/yyyy HH:mm');
     return Row(
       children: [
         Icon(Icons.calendar_today, size: 16, color: Colors.grey.shade600),
@@ -166,32 +166,31 @@ class UpdateDialog extends StatelessWidget {
   ) {
     return showDialog(
       context: context,
-      builder:
-          (context) => UpdateDialog(
-            updateInfo: updateInfo,
-            onDownload: () async {
-              try {
-                await updateService.openDownloadUrl(updateInfo.downloadUrl);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Download iniciado no navegador'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Erro ao abrir download: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
-          ),
+      builder: (context) => UpdateDialog(
+        updateInfo: updateInfo,
+        onDownload: () async {
+          try {
+            await updateService.openDownloadUrl(updateInfo.downloadUrl);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Download iniciado no navegador'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Erro ao abrir download: $e'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+        },
+      ),
     );
   }
 }
