@@ -8,6 +8,8 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
+    permissions:
+      contents: write
     
     steps:
       - name: Checkout código
@@ -73,10 +75,6 @@ jobs:
           # Procura pela seção "### Novidades"
           if ($tagMessage -match '### Novidades\s+([\s\S]*)') {
             $notes = $matches[1].Trim()
-            # Escapa caracteres especiais para o GITHUB_OUTPUT
-            $notes = $notes -replace '%', '%25'
-            $notes = $notes -replace '\r', '%0D'
-            $notes = $notes -replace '\n', '%0A'
             echo "NOTES=$notes" >> $env:GITHUB_OUTPUT
             echo "HAS_NOTES=true" >> $env:GITHUB_OUTPUT
           } else {
@@ -84,14 +82,10 @@ jobs:
             echo "HAS_NOTES=false" >> $env:GITHUB_OUTPUT
           }
       
-      - name: Criar GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Criar GitHub Release e Upload
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ steps.get_version.outputs.VERSION }}
+          name: Release ${{ steps.get_version.outputs.VERSION }}
           body: |
             ## Workshop Shelf Helper v${{ steps.get_version.outputs.VERSION }}
             
@@ -125,18 +119,9 @@ jobs:
             ### 🆘 Suporte
             
             Em caso de problemas, consulte a documentação no repositório ou abra uma issue.
+          files: ./output/WorkshopShelfHelper-Setup-${{ steps.get_version.outputs.VERSION }}.exe
           draft: false
           prerelease: false
-      
-      - name: Upload instalador para Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./output/WorkshopShelfHelper-Setup-${{ steps.get_version.outputs.VERSION }}.exe
-          asset_name: WorkshopShelfHelper-Setup-${{ steps.get_version.outputs.VERSION }}.exe
-          asset_content_type: application/octet-stream
       
       - name: Upload build artifacts (backup)
         uses: actions/upload-artifact@v4
