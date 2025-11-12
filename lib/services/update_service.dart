@@ -42,15 +42,14 @@ class UpdateService {
   late final String githubRepo;
 
   UpdateService({Dio? dio})
-    : _dio =
-          dio ??
-          Dio(
-            BaseOptions(
-              connectTimeout: const Duration(seconds: 10),
-              receiveTimeout: const Duration(seconds: 10),
-              headers: {'Accept': 'application/vnd.github.v3+json'},
-            ),
-          ) {
+      : _dio = dio ??
+            Dio(
+              BaseOptions(
+                connectTimeout: const Duration(seconds: 10),
+                receiveTimeout: const Duration(seconds: 10),
+                headers: {'Accept': 'application/vnd.github.v3+json'},
+              ),
+            ) {
     githubOwner = EnvConfig.githubOwner;
     githubRepo = EnvConfig.githubRepo;
   }
@@ -67,7 +66,8 @@ class UpdateService {
       if (response.statusCode == 200) {
         final data = response.data;
         final latestVersion = (data['tag_name'] as String).replaceFirst('v', '');
-        final releaseNotes = data['body'] as String? ?? 'Sem notas de atualização';
+        final rawReleaseNotes = data['body'] as String? ?? 'Sem notas de atualização';
+        final releaseNotes = _stripMarkdown(rawReleaseNotes);
         final publishedAt = DateTime.parse(data['published_at'] as String);
 
         // Procura o asset do instalador Windows
@@ -116,5 +116,40 @@ class UpdateService {
     } else {
       throw Exception('Não foi possível abrir o link de download');
     }
+  }
+
+  String _stripMarkdown(String markdown) {
+    String result = markdown;
+
+    // Remove títulos (##, ###, etc)
+    result = result.replaceAll(RegExp(r'^#{1,6}\s+', multiLine: true), '');
+
+    // Remove negrito (**texto** ou __texto__)
+    result = result.replaceAll(RegExp(r'\*\*(.+?)\*\*'), r'$1');
+    result = result.replaceAll(RegExp(r'__(.+?)__'), r'$1');
+
+    // Remove itálico (*texto* ou _texto_)
+    result = result.replaceAll(RegExp(r'\*(.+?)\*'), r'$1');
+    result = result.replaceAll(RegExp(r'_(.+?)_'), r'$1');
+
+    // Remove linhas horizontais (---, ***, ___)
+    result = result.replaceAll(RegExp(r'^[\-\*_]{3,}\s*$', multiLine: true), '');
+
+    // Converte links [texto](url) para apenas texto
+    result = result.replaceAll(RegExp(r'\[([^\]]+)\]\([^\)]+\)'), r'$1');
+
+    // Remove backticks de código inline (`código`)
+    result = result.replaceAll(RegExp(r'`([^`]+)`'), r'$1');
+
+    // Remove blocos de código (```...```)
+    result = result.replaceAll(RegExp(r'```[\s\S]*?```'), '');
+
+    // Limpa múltiplas linhas vazias consecutivas
+    result = result.replaceAll(RegExp(r'\n{3,}'), '\n\n');
+
+    // Remove espaços em branco no início e fim
+    result = result.trim();
+
+    return result;
   }
 }
