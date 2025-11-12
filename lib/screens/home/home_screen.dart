@@ -29,8 +29,8 @@ class HomeScreenMultiProvider extends StatelessWidget {
           create: (_) => CategoryProvider(repository: CategoryRepository(DatabaseHelper.instance)),
         ),
         ChangeNotifierProvider(
-          create:
-              (_) => ComponentProvider(repository: ComponentRepository(DatabaseHelper.instance)),
+          create: (_) =>
+              ComponentProvider(repository: ComponentRepository(DatabaseHelper.instance)),
         ),
         ChangeNotifierProvider(
           create: (_) => ReportProvider(repository: ReportRepository(DatabaseHelper.instance)),
@@ -49,6 +49,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   void initState() {
     super.initState();
@@ -78,126 +80,141 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       drawer: const HomeDrawer(),
-      body: Selector<ReportProvider, bool>(
-        selector: (context, provider) => provider.isLoading,
-        builder: (context, isLoading, child) {
-          if (isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          return child!;
-        },
-        child: RefreshIndicator(
-          onRefresh: () async {
-            context.read<ReportProvider>().loadDashboardData();
-          },
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 20,
-              children: [
-                Text(
-                  'Dashboard',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const QuickSearchBar(),
-                const RestockAlertsSection(),
-                const QuickActionsSection(),
-                const DashboardSummaryCards(),
-                const TopCategoriesSection(),
-                if (kDebugMode) ...[
-                  ActionButton(
-                    title: '🔧 Resetar com Dados Mock',
-                    icon: Icons.refresh,
-                    color: Colors.orange,
-                    onTap: () {
-                      resetWithMockData(context);
-                    },
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 48, left: 8, right: 8),
+            child: Selector<ReportProvider, bool>(
+              selector: (context, provider) => provider.isLoading,
+              builder: (context, isLoading, child) {
+                if (isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                return child!;
+              },
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  context.read<ReportProvider>().loadDashboardData();
+                },
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 20,
+                    children: [
+                      Text(
+                        'Dashboard',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      const QuickSearchBar(),
+                      const RestockAlertsSection(),
+                      const QuickActionsSection(),
+                      const DashboardSummaryCards(),
+                      const TopCategoriesSection(),
+                      if (kDebugMode) ...[
+                        ActionButton(
+                          title: '🔧 Resetar com Dados Mock',
+                          icon: Icons.refresh,
+                          color: Colors.orange,
+                          onTap: () {
+                            resetWithMockData(context);
+                          },
+                        ),
+                      ],
+                    ],
                   ),
-                ],
-              ],
+                ),
+              ),
             ),
           ),
-        ),
+          Positioned(
+            top: 8,
+            left: 8,
+            child: SizedBox(
+              width: 48,
+              height: 48,
+              child: IconButton(
+                onPressed: () {
+                  _scaffoldKey.currentState?.openDrawer();
+                },
+                icon: const Icon(Icons.menu),
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
 Future<void> resetWithMockData(BuildContext context) async {
-  // Show confirmation dialog
   final confirmed = await showDialog<bool>(
     context: context,
-    builder:
-        (context) => AlertDialog(
-          title: const Text('⚠️ Confirmar Ação'),
-          content: const Text(
-            'Esta ação irá APAGAR TODOS OS DADOS do banco e '
-            'repopular com dados de exemplo.\n\n'
-            'Deseja continuar?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Confirmar'),
-            ),
-          ],
+    builder: (context) => AlertDialog(
+      title: const Text('⚠️ Confirmar Ação'),
+      content: const Text(
+        'Esta ação irá APAGAR TODOS OS DADOS do banco e '
+        'repopular com dados de exemplo.\n\n'
+        'Deseja continuar?',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancelar'),
         ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, true),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.orange,
+            foregroundColor: Colors.white,
+          ),
+          child: const Text('Confirmar'),
+        ),
+      ],
+    ),
   );
 
   if (confirmed != true) return;
 
   try {
-    // Show loading
     if (context.mounted) {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder:
-            (context) => const Center(
-              child: Card(
-                child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text('Resetando banco de dados...'),
-                    ],
-                  ),
-                ),
+        builder: (context) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Resetando banco de dados...'),
+                ],
               ),
             ),
+          ),
+        ),
       );
     }
 
-    // Reset database with mock data
     await DatabaseHelper.instance.resetWithMockData();
 
-    // Reload data
     if (context.mounted) {
       context.read<ReportProvider>().loadDashboardData();
     }
 
-    // Close loading
     if (context.mounted) {
       Navigator.pop(context);
     }
 
-    // Show success
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -208,12 +225,10 @@ Future<void> resetWithMockData(BuildContext context) async {
       );
     }
   } catch (e) {
-    // Close loading if open
     if (context.mounted) {
       Navigator.pop(context);
     }
 
-    // Show error
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

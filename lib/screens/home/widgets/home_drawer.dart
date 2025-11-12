@@ -5,6 +5,7 @@ import 'package:workshop_shelf_helper/providers/component_provider.dart';
 import 'package:workshop_shelf_helper/providers/report_provider.dart';
 import 'package:workshop_shelf_helper/screens/categories/categories_list_screen.dart';
 import 'package:workshop_shelf_helper/screens/components/components_list_screen.dart';
+import 'package:workshop_shelf_helper/screens/import/import_screen.dart';
 import 'package:workshop_shelf_helper/screens/reports/reports_screen.dart';
 import 'package:workshop_shelf_helper/services/update_service.dart';
 import 'package:workshop_shelf_helper/widgets/update_dialog.dart';
@@ -19,13 +20,12 @@ class HomeDrawer extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary),
+            decoration: BoxDecoration(color: Theme.of(context).colorScheme.onPrimaryFixed),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Icon(Icons.inventory_2, size: 48, color: Theme.of(context).colorScheme.onPrimary),
-                const SizedBox(height: 8),
+                Image.asset('assets/images/logo.png', width: 100, height: 100),
                 Text(
                   'Organizador de Oficina',
                   style: TextStyle(
@@ -38,87 +38,125 @@ class HomeDrawer extends StatelessWidget {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.home),
-            title: const Text('Home'),
+            leading: Icon(Icons.home, color: Theme.of(context).colorScheme.onSecondaryContainer),
+            title: Text('Home',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSecondaryContainer)),
             onTap: () {
               Navigator.pop(context);
             },
           ),
           ListTile(
-            leading: const Icon(Icons.category),
-            title: const Text('Categorias'),
+            leading:
+                Icon(Icons.category, color: Theme.of(context).colorScheme.onSecondaryContainer),
+            title: Text('Categorias',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSecondaryContainer)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder:
-                      (_) => MultiProvider(
-                        providers: [
-                          ChangeNotifierProvider.value(value: context.read<CategoryProvider>()),
-                          ChangeNotifierProvider.value(value: context.read<ComponentProvider>()),
-                          ChangeNotifierProvider.value(value: context.read<ReportProvider>()),
-                        ],
-                        child: const CategoriesListScreen(),
-                      ),
+                  builder: (_) => MultiProvider(
+                    providers: [
+                      ChangeNotifierProvider.value(value: context.read<CategoryProvider>()),
+                      ChangeNotifierProvider.value(value: context.read<ComponentProvider>()),
+                      ChangeNotifierProvider.value(value: context.read<ReportProvider>()),
+                    ],
+                    child: const CategoriesListScreen(),
+                  ),
                 ),
               );
             },
           ),
           ListTile(
-            leading: const Icon(Icons.inventory),
-            title: const Text('Componentes'),
+            leading:
+                Icon(Icons.inventory, color: Theme.of(context).colorScheme.onSecondaryContainer),
+            title: Text('Componentes',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSecondaryContainer)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder:
-                      (_) => MultiProvider(
-                        providers: [
-                          ChangeNotifierProvider.value(value: context.read<CategoryProvider>()),
-                          ChangeNotifierProvider.value(value: context.read<ComponentProvider>()),
-                          ChangeNotifierProvider.value(value: context.read<ReportProvider>()),
-                        ],
-                        child: const ComponentsListScreen(),
-                      ),
+                  builder: (_) => MultiProvider(
+                    providers: [
+                      ChangeNotifierProvider.value(value: context.read<CategoryProvider>()),
+                      ChangeNotifierProvider.value(value: context.read<ComponentProvider>()),
+                      ChangeNotifierProvider.value(value: context.read<ReportProvider>()),
+                    ],
+                    child: const ComponentsListScreen(),
+                  ),
                 ),
               );
             },
           ),
           ListTile(
-            leading: const Icon(Icons.assessment),
-            title: const Text('Relatórios'),
+            leading:
+                Icon(Icons.assessment, color: Theme.of(context).colorScheme.onSecondaryContainer),
+            title: Text('Relatórios',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSecondaryContainer)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder:
-                      (_) => MultiProvider(
-                        providers: [
-                          ChangeNotifierProvider.value(value: context.read<CategoryProvider>()),
-                          ChangeNotifierProvider.value(value: context.read<ComponentProvider>()),
-                          ChangeNotifierProvider.value(value: context.read<ReportProvider>()),
-                        ],
-                        child: const ReportsScreen(),
-                      ),
+                  builder: (_) => MultiProvider(
+                    providers: [
+                      ChangeNotifierProvider.value(value: context.read<CategoryProvider>()),
+                      ChangeNotifierProvider.value(value: context.read<ComponentProvider>()),
+                      ChangeNotifierProvider.value(value: context.read<ReportProvider>()),
+                    ],
+                    child: const ReportsScreen(),
+                  ),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.import_export,
+                color: Theme.of(context).colorScheme.onSecondaryContainer),
+            title: Text('Importar Dados',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSecondaryContainer)),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => MultiProvider(
+                    providers: [
+                      ChangeNotifierProvider.value(value: context.read<CategoryProvider>()),
+                      ChangeNotifierProvider.value(value: context.read<ComponentProvider>()),
+                      ChangeNotifierProvider.value(value: context.read<ReportProvider>()),
+                    ],
+                    child: const ImportScreen(),
+                  ),
                 ),
               );
             },
           ),
           const Divider(),
           ListTile(
-            leading: const Icon(Icons.refresh),
-            title: const Text('Atualizar Dados'),
-            onTap: () {
-              Navigator.pop(context);
-              context.read<ReportProvider>().loadDashboardData();
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.system_update),
-            title: const Text('Verificar Atualizações'),
+            leading: Icon(Icons.system_update,
+                color: Theme.of(context).colorScheme.onSecondaryContainer),
+            title: Text('Verificar Atualizações',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSecondaryContainer)),
             onTap: () {
               Navigator.pop(context);
               _checkForUpdates(context);
@@ -135,22 +173,21 @@ class HomeDrawer extends StatelessWidget {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => const Center(
-            child: Card(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Verificando atualizações...'),
-                  ],
-                ),
-              ),
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Verificando atualizações...'),
+              ],
             ),
           ),
+        ),
+      ),
     );
 
     try {
