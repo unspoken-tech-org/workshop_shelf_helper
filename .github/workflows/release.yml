@@ -68,44 +68,55 @@ jobs:
         id: get_release_notes
         shell: pwsh
         run: |
-          # Extrai a mensagem completa da tag
+          # Extrai o conteúdo completo da tag anotada usando git cat-file
           $tagName = "${{ github.ref_name }}"
-          $tagMessage = git tag -l --format='%(contents)' $tagName
+          $tagContent = git cat-file -p $tagName
           
-          # Debug: mostra a mensagem completa
-          Write-Host "=== Conteudo completo da tag ==="
-          Write-Host $tagMessage
-          Write-Host "================================"
+          # Debug: mostra o conteúdo completo
+          Write-Host "=== Conteudo completo da tag (cat-file) ==="
+          Write-Host $tagContent
+          Write-Host "==========================================="
           
-          # Procura pela seção "### Novidades"
-          if ($tagMessage -match '###\s*Novidades\s*\r?\n\r?\n([\s\S]+)') {
-            $notes = $matches[1].Trim()
-            Write-Host "Notas extraidas da secao Novidades:"
-            Write-Host $notes
-            echo "NOTES=$notes" >> $env:GITHUB_OUTPUT
-          } elseif ($tagMessage -match 'Release\s+[\d\.]+\s*\r?\n\r?\n([\s\S]+)') {
-            # Fallback: usa tudo depois da primeira linha "Release X.Y.Z"
-            $notes = $matches[1].Trim()
-            Write-Host "Notas extraidas do corpo da tag (fallback):"
-            Write-Host $notes
-            echo "NOTES=$notes" >> $env:GITHUB_OUTPUT
-          } else {
-            # Se não encontrar nada, usa a mensagem inteira exceto primeira linha
-            $lines = $tagMessage -split '\r?\n'
-            if ($lines.Length -gt 1) {
-              $notes = ($lines[1..($lines.Length-1)] -join "`n").Trim()
-              if ($notes) {
-                Write-Host "Notas extraidas do corpo completo (fallback 2):"
-                Write-Host $notes
-                echo "NOTES=$notes" >> $env:GITHUB_OUTPUT
+          # Busca pela palavra "Release" e extrai tudo a partir dela
+          if ($tagContent -match '(Release[\s\S]*)$') {
+            $tagMessage = $matches[1].Trim()
+            Write-Host "=== Mensagem da tag extraida ==="
+            Write-Host $tagMessage
+            Write-Host "================================"
+            
+            # Procura pela seção "### Novidades"
+            if ($tagMessage -match '###\s*Novidades\s*\r?\n\r?\n([\s\S]+)') {
+              $notes = $matches[1].Trim()
+              Write-Host "Notas extraidas da secao Novidades:"
+              Write-Host $notes
+              echo "NOTES=$notes" >> $env:GITHUB_OUTPUT
+            } elseif ($tagMessage -match 'Release\s+[\d\.]+\s*\r?\n\r?\n([\s\S]+)') {
+              # Fallback: usa tudo depois da primeira linha "Release X.Y.Z"
+              $notes = $matches[1].Trim()
+              Write-Host "Notas extraidas do corpo da tag (fallback):"
+              Write-Host $notes
+              echo "NOTES=$notes" >> $env:GITHUB_OUTPUT
+            } else {
+              # Se não encontrar nada, usa a mensagem inteira exceto primeira linha
+              $lines = $tagMessage -split '\r?\n'
+              if ($lines.Length -gt 1) {
+                $notes = ($lines[1..($lines.Length-1)] -join "`n").Trim()
+                if ($notes) {
+                  Write-Host "Notas extraidas do corpo completo (fallback 2):"
+                  Write-Host $notes
+                  echo "NOTES=$notes" >> $env:GITHUB_OUTPUT
+                } else {
+                  Write-Host "Nenhuma nota encontrada na tag"
+                  echo "NOTES=Nenhuma nota de release fornecida." >> $env:GITHUB_OUTPUT
+                }
               } else {
-                Write-Host "Nenhuma nota encontrada na tag"
+                Write-Host "Tag sem corpo/mensagem"
                 echo "NOTES=Nenhuma nota de release fornecida." >> $env:GITHUB_OUTPUT
               }
-            } else {
-              Write-Host "Tag sem corpo/mensagem"
-              echo "NOTES=Nenhuma nota de release fornecida." >> $env:GITHUB_OUTPUT
             }
+          } else {
+            Write-Host "Palavra 'Release' nao encontrada na tag"
+            echo "NOTES=Nenhuma nota de release fornecida." >> $env:GITHUB_OUTPUT
           }
       
       - name: Criar GitHub Release e Upload
