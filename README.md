@@ -37,6 +37,32 @@ Aplicativo Flutter para Windows para gerenciamento de estoque de componentes ele
 - **SQLite**: Banco de dados local (sqflite_common_ffi)
 - **Provider**: Gerenciamento de estado com ChangeNotifierProvider
 - **Material Design 3**: Interface moderna e intuitiva
+- **flutter_dotenv**: Gerenciamento de variáveis de ambiente
+
+## Configuração de Ambiente
+
+O aplicativo utiliza variáveis de ambiente para configurações sensíveis e específicas do ambiente. Um arquivo `.env.example` é fornecido como template.
+
+### Variáveis Disponíveis
+
+- `GITHUB_OWNER`: Nome do usuário ou organização do GitHub (usado para verificação de atualizações)
+- `GITHUB_REPO`: Nome do repositório no GitHub
+
+
+### Como Configurar
+
+1. Copie o arquivo `.env.example` para `.env`:
+   ```bash
+   copy .env.example .env
+   ```
+
+2. Edite o arquivo `.env` e preencha as variáveis com suas informações:
+   ```env
+   GITHUB_OWNER=seu-usuario-github
+   GITHUB_REPO=app-organizador-oficina
+   ```
+
+**Importante**: O arquivo `.env` não é versionado no Git para proteger informações sensíveis.
 
 ## Dependências
 
@@ -44,13 +70,17 @@ Aplicativo Flutter para Windows para gerenciamento de estoque de componentes ele
 dependencies:
   flutter:
     sdk: flutter
-  provider: ^6.1.1          # Gerenciamento de estado
+  provider: ^6.1.1           # Gerenciamento de estado
   sqflite_common_ffi: ^2.3.0 # SQLite para desktop
-  path_provider: ^2.1.1     # Gerenciamento de arquivos
+  path_provider: ^2.1.1      # Gerenciamento de arquivos
   path: ^1.8.3
-  pdf: ^3.10.7              # Geração de PDFs
-  csv: ^6.0.0               # Exportação CSV
-  intl: ^0.19.0             # Formatação de datas e valores
+  pdf: ^3.10.7               # Geração de PDFs
+  csv: ^6.0.0                # Exportação CSV
+  intl: ^0.19.0              # Formatação de datas e valores
+  flutter_dotenv: ^5.2.1     # Variáveis de ambiente
+  dio: ^5.4.0                # Cliente HTTP
+  url_launcher: ^6.2.0       # Abrir URLs
+  package_info_plus: ^9.0.0  # Informações do pacote
 ```
 
 ## Como Executar
@@ -67,12 +97,22 @@ git clone <url-do-repositorio>
 cd app-organizador-oficina
 ```
 
-2. Instale as dependências:
+2. Configure as variáveis de ambiente:
+```bash
+# Copie o arquivo de exemplo
+copy .env.example .env
+
+# Edite o arquivo .env e adicione suas configurações:
+# GITHUB_OWNER=seu-usuario-github
+# GITHUB_REPO=app-organizador-oficina
+```
+
+3. Instale as dependências:
 ```bash
 flutter pub get
 ```
 
-3. Execute o aplicativo:
+4. Execute o aplicativo:
 ```bash
 flutter run -d windows
 ```
@@ -91,6 +131,8 @@ O executável estará em: `build/windows/runner/Release/`
 
 ```
 lib/
+├── config/
+│   └── env_config.dart           # Configurações de ambiente
 ├── database/
 │   └── database_helper.dart      # Helper do SQLite
 ├── models/
@@ -110,11 +152,13 @@ lib/
 │   └── relatorios/
 │       └── relatorios_screen.dart
 ├── services/
-│   └── export_service.dart       # Serviço de exportação
+│   ├── export_service.dart       # Serviço de exportação
+│   └── update_service.dart       # Serviço de atualização
 ├── widgets/
 │   ├── confirmar_dialog.dart     # Dialog de confirmação
 │   ├── custom_card.dart          # Card personalizado
-│   └── custom_text_field.dart    # Campo de texto customizado
+│   ├── custom_text_field.dart    # Campo de texto customizado
+│   └── update_dialog.dart        # Dialog de atualização
 └── main.dart                     # Ponto de entrada da aplicação
 ```
 

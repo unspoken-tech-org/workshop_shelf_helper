@@ -1,0 +1,147 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Trigger quando uma tag de versão é criada (ex: v1.0.0, v1.2.3)
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.2'  # Ajuste conforme necessário
+          channel: 'stable'
+      
+      - name: Verificar versão do Flutter
+        run: flutter --version
+      
+      - name: Instalar dependências
+        run: flutter pub get
+      
+      - name: Habilitar build Windows
+        run: flutter config --enable-windows-desktop
+      
+      - name: Build Windows Release
+        run: flutter build windows --release
+      
+      - name: Extrair versão do pubspec.yaml
+        id: get_version
+        shell: pwsh
+        run: |
+          $content = Get-Content pubspec.yaml -Raw
+          $version = ($content | Select-String -Pattern 'version:\s*(\d+\.\d+\.\d+)').Matches.Groups[1].Value
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          echo "Versão extraída: $version"
+      
+      - name: Download Inno Setup
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://jrsoftware.org/download.php/is.exe" -OutFile "innosetup-installer.exe"
+          Start-Process -FilePath "innosetup-installer.exe" -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-" -Wait
+      
+      - name: Compilar instalador com Inno Setup
+        shell: pwsh
+        run: |
+          # Atualiza a versão no script Inno Setup
+          $setupScript = Get-Content installer/setup.iss -Raw
+          $setupScript = $setupScript -replace '#define MyAppVersion ".*"', "#define MyAppVersion `"${{ steps.get_version.outputs.VERSION }}`""
+          Set-Content -Path installer/setup.iss -Value $setupScript
+          
+          # Compila o instalador
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer/setup.iss
+      
+      - name: Verificar arquivo gerado
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path output -Recurse
+      
+      - name: Extrair notas de release da tag
+        id: get_release_notes
+        shell: pwsh
+        run: |
+          # Extrai a mensagem completa da tag
+          $tagName = "${{ github.ref_name }}"
+          $tagMessage = git tag -l --format='%(contents)' $tagName
+          
+          # Procura pela seção "### Novidades"
+          if ($tagMessage -match '### Novidades\s+([\s\S]*)') {
+            $notes = $matches[1].Trim()
+            # Escapa caracteres especiais para o GITHUB_OUTPUT
+            $notes = $notes -replace '%', '%25'
+            $notes = $notes -replace '\r', '%0D'
+            $notes = $notes -replace '\n', '%0A'
+            echo "NOTES=$notes" >> $env:GITHUB_OUTPUT
+            echo "HAS_NOTES=true" >> $env:GITHUB_OUTPUT
+          } else {
+            echo "NOTES=Nenhuma nota de release fornecida." >> $env:GITHUB_OUTPUT
+            echo "HAS_NOTES=false" >> $env:GITHUB_OUTPUT
+          }
+      
+      - name: Criar GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ steps.get_version.outputs.VERSION }}
+          body: |
+            ## Workshop Shelf Helper v${{ steps.get_version.outputs.VERSION }}
+            
+            ### ✨ Novidades
+            
+            ${{ steps.get_release_notes.outputs.NOTES }}
+            
+            ---
+            
+            ### 📦 Como Instalar
+            
+            1. **Baixe o instalador** abaixo (`WorkshopShelfHelper-Setup-${{ steps.get_version.outputs.VERSION }}.exe`)
+            2. **Execute o arquivo** (será solicitado privilégios de administrador)
+            3. **Siga o assistente** de instalação
+            4. **Escolha o diretório** de instalação (padrão: `C:\Program Files\Workshop Shelf Helper`)
+            
+            ### 🔄 Atualizando de Versão Anterior
+            
+            Se você já tem uma versão instalada:
+            - ✅ O instalador **detectará automaticamente** a versão anterior
+            - ✅ Seu **banco de dados será preservado** (sem perda de dados)
+            - ✅ A atualização será feita **automaticamente**
+            - ✅ Todas as suas **configurações e componentes** permanecerão intactos
+            
+            ### 📋 Requisitos
+            
+            - Windows 10 ou superior (64-bit)
+            - Privilégios de administrador para instalação
+            - ~100 MB de espaço em disco
+            
+            ### 🆘 Suporte
+            
+            Em caso de problemas, consulte a documentação no repositório ou abra uma issue.
+          draft: false
+          prerelease: false
+      
+      - name: Upload instalador para Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./output/WorkshopShelfHelper-Setup-${{ steps.get_version.outputs.VERSION }}.exe
+          asset_name: WorkshopShelfHelper-Setup-${{ steps.get_version.outputs.VERSION }}.exe
+          asset_content_type: application/octet-stream
+      
+      - name: Upload build artifacts (backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: output/*.exe
+          retention-days: 90
+

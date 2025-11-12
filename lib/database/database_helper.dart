@@ -1,7 +1,8 @@
 import 'dart:io';
+
 import 'package:path/path.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
 import 'interfaces/i_database.dart';
 import 'migrations/migration_runner.dart';
 import 'seeders/seeder_runner.dart';
@@ -30,8 +31,8 @@ class DatabaseHelper implements IDatabase {
       _ffiInitialized = true;
     }
 
-    final dbPath = await getApplicationDocumentsDirectory();
-    final path = join(dbPath.path, filePath);
+    final exeDir = File(Platform.resolvedExecutable).parent.path;
+    final path = join(exeDir, filePath);
 
     return await openDatabase(
       path,
