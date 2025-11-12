@@ -72,14 +72,40 @@ jobs:
           $tagName = "${{ github.ref_name }}"
           $tagMessage = git tag -l --format='%(contents)' $tagName
           
+          # Debug: mostra a mensagem completa
+          Write-Host "=== Conteudo completo da tag ==="
+          Write-Host $tagMessage
+          Write-Host "================================"
+          
           # Procura pela seção "### Novidades"
-          if ($tagMessage -match '### Novidades\s+([\s\S]*)') {
+          if ($tagMessage -match '###\s*Novidades\s*\r?\n\r?\n([\s\S]+)') {
             $notes = $matches[1].Trim()
+            Write-Host "Notas extraidas da secao Novidades:"
+            Write-Host $notes
             echo "NOTES=$notes" >> $env:GITHUB_OUTPUT
-            echo "HAS_NOTES=true" >> $env:GITHUB_OUTPUT
+          } elseif ($tagMessage -match 'Release\s+[\d\.]+\s*\r?\n\r?\n([\s\S]+)') {
+            # Fallback: usa tudo depois da primeira linha "Release X.Y.Z"
+            $notes = $matches[1].Trim()
+            Write-Host "Notas extraidas do corpo da tag (fallback):"
+            Write-Host $notes
+            echo "NOTES=$notes" >> $env:GITHUB_OUTPUT
           } else {
-            echo "NOTES=Nenhuma nota de release fornecida." >> $env:GITHUB_OUTPUT
-            echo "HAS_NOTES=false" >> $env:GITHUB_OUTPUT
+            # Se não encontrar nada, usa a mensagem inteira exceto primeira linha
+            $lines = $tagMessage -split '\r?\n'
+            if ($lines.Length -gt 1) {
+              $notes = ($lines[1..($lines.Length-1)] -join "`n").Trim()
+              if ($notes) {
+                Write-Host "Notas extraidas do corpo completo (fallback 2):"
+                Write-Host $notes
+                echo "NOTES=$notes" >> $env:GITHUB_OUTPUT
+              } else {
+                Write-Host "Nenhuma nota encontrada na tag"
+                echo "NOTES=Nenhuma nota de release fornecida." >> $env:GITHUB_OUTPUT
+              }
+            } else {
+              Write-Host "Tag sem corpo/mensagem"
+              echo "NOTES=Nenhuma nota de release fornecida." >> $env:GITHUB_OUTPUT
+            }
           }
       
       - name: Criar GitHub Release e Upload

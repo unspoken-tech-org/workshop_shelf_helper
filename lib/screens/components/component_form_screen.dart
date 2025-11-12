@@ -5,6 +5,7 @@ import 'package:workshop_shelf_helper/providers/category_provider.dart';
 import 'package:workshop_shelf_helper/models/category.dart';
 import 'package:workshop_shelf_helper/models/component.dart';
 import 'package:workshop_shelf_helper/providers/component_provider.dart';
+import 'package:workshop_shelf_helper/utils/brazilian_currency_formatter.dart';
 
 class ComponentFormScreen extends StatefulWidget {
   final int? componentId;
@@ -61,11 +62,10 @@ class _ComponentFormScreenState extends State<ComponentFormScreen> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: Selector<ComponentProvider, ({bool isLoading, Component? component})>(
-        selector:
-            (context, provider) => (
-              isLoading: provider.isLoading,
-              component: provider.selectedComponent,
-            ),
+        selector: (context, provider) => (
+          isLoading: provider.isLoading,
+          component: provider.selectedComponent,
+        ),
         builder: (context, state, child) {
           if (state.isLoading) {
             return const Center(child: CircularProgressIndicator());
@@ -80,14 +80,14 @@ class _ComponentFormScreenState extends State<ComponentFormScreen> {
             _locationController.text = state.component!.location;
             _polarityController.text = state.component!.polarity ?? '';
             _packageController.text = state.component!.package ?? '';
-            _costController.text = state.component!.unitCost.toStringAsFixed(2);
+            _costController.text =
+                BrazilianCurrencyInputFormatter.formatToBrazilian(state.component!.unitCost);
             _notesController.text = state.component!.notes ?? '';
             _selectedCategory = state.component!.categoryId;
           }
 
           return child!;
         },
-
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Form(
@@ -117,10 +117,9 @@ class _ComponentFormScreenState extends State<ComponentFormScreen> {
                                 labelText: 'Categoria *',
                                 prefixIcon: Icon(Icons.category),
                               ),
-                              items:
-                                  categories.map((cat) {
-                                    return DropdownMenuItem(value: cat.id, child: Text(cat.name));
-                                  }).toList(),
+                              items: categories.map((cat) {
+                                return DropdownMenuItem(value: cat.id, child: Text(cat.name));
+                              }).toList(),
                               onChanged: (value) {
                                 setState(() => _selectedCategory = value);
                               },
@@ -253,18 +252,19 @@ class _ComponentFormScreenState extends State<ComponentFormScreen> {
                           controller: _costController,
                           decoration: const InputDecoration(
                             labelText: 'Custo Unitário (R\$) *',
-                            hintText: '0.00',
+                            hintText: '0,00',
                             prefixIcon: Icon(Icons.attach_money),
                           ),
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           inputFormatters: [
-                            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                            BrazilianCurrencyInputFormatter(),
                           ],
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return 'Informe o custo unitário';
                             }
-                            final cost = double.tryParse(value);
+                            final cost =
+                                BrazilianCurrencyInputFormatter.parseFromBrazilianFormat(value);
                             if (cost == null || cost < 0) {
                               return 'Custo inválido';
                             }
@@ -337,17 +337,16 @@ class _ComponentFormScreenState extends State<ComponentFormScreen> {
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   ),
-                  child:
-                      _isLoading
-                          ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                          : Text(
-                            isEditing ? 'Atualizar Componente' : 'Cadastrar Componente',
-                            style: const TextStyle(fontSize: 16),
-                          ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : Text(
+                          isEditing ? 'Atualizar Componente' : 'Cadastrar Componente',
+                          style: const TextStyle(fontSize: 16),
+                        ),
                 ),
               ],
             ),
@@ -359,9 +358,10 @@ class _ComponentFormScreenState extends State<ComponentFormScreen> {
 
   String _calculateTotalValue() {
     final quantity = int.tryParse(_quantityController.text) ?? 0;
-    final cost = double.tryParse(_costController.text) ?? 0.0;
+    final cost =
+        BrazilianCurrencyInputFormatter.parseFromBrazilianFormat(_costController.text) ?? 0.0;
     final total = quantity * cost;
-    return total.toStringAsFixed(2);
+    return BrazilianCurrencyInputFormatter.formatToBrazilian(total);
   }
 
   Future<void> _save() async {
@@ -380,7 +380,8 @@ class _ComponentFormScreenState extends State<ComponentFormScreen> {
       location: _locationController.text.trim(),
       polarity: _polarityController.text.trim().isEmpty ? null : _polarityController.text.trim(),
       package: _packageController.text.trim().isEmpty ? null : _packageController.text.trim(),
-      unitCost: double.parse(_costController.text.trim()),
+      unitCost:
+          BrazilianCurrencyInputFormatter.parseFromBrazilianFormat(_costController.text.trim())!,
       notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
     );
 

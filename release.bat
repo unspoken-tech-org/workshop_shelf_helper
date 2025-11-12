@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 setlocal enabledelayedexpansion
 
 echo ==========================================
@@ -160,7 +161,8 @@ if %HAS_NOTES%==1 (
     echo Versao %NEW_VERSION% >> "%TAG_MSG_FILE%"
 )
 
-git tag -a v%NEW_VERSION% -F "%TAG_MSG_FILE%"
+REM Configura Git para usar UTF-8 e cria a tag
+git -c i18n.commitEncoding=UTF-8 tag -a v%NEW_VERSION% -F "%TAG_MSG_FILE%"
 
 REM Limpa arquivos temporários
 if exist "%NOTES_FILE%" del "%NOTES_FILE%"
