@@ -15,6 +15,8 @@ import 'package:workshop_shelf_helper/screens/home/widgets/restock_alerts_sectio
 import 'package:workshop_shelf_helper/screens/home/widgets/dashboard_summary_cards.dart';
 import 'package:workshop_shelf_helper/screens/home/widgets/top_categories_section.dart';
 import 'package:workshop_shelf_helper/screens/home/widgets/quick_actions_section.dart';
+import 'package:workshop_shelf_helper/services/update_service.dart';
+import 'package:workshop_shelf_helper/widgets/update_dialog.dart';
 
 class HomeScreenMultiProvider extends StatelessWidget {
   const HomeScreenMultiProvider({super.key});
@@ -50,10 +52,27 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Carregar dados iniciais do dashboard
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ReportProvider>().loadDashboardData();
+      _checkForUpdatesOnStartup();
     });
+  }
+
+  Future<void> _checkForUpdatesOnStartup() async {
+    try {
+      final updateService = UpdateService();
+
+      final updateInfo = await updateService.checkForUpdates();
+
+      if (mounted && updateInfo != null && updateInfo.hasUpdate) {
+        await Future.delayed(const Duration(seconds: 2));
+        if (mounted) {
+          await UpdateDialog.show(context, updateInfo, updateService);
+        }
+      }
+    } catch (e) {
+      debugPrint('Erro ao verificar atualizações automaticamente: $e');
+    }
   }
 
   @override
