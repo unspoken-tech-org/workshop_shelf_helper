@@ -1,5 +1,4 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import '../../utils/text_normalizer.dart';
 import 'migration.dart';
 
 class MigrationV1 implements Migration {
@@ -33,35 +32,5 @@ class MigrationV1 implements Migration {
         FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE
       )
     ''');
-
-    await _insertInitialData(db);
-  }
-
-  Future<void> _insertInitialData(Database db) async {
-    await db.insert('categories', {
-      'name': 'Transistores',
-      'name_normalized': normalizeText('Transistores'),
-      'description': 'Transistores diversos',
-    });
-    await db.insert('categories', {
-      'name': 'Resistores',
-      'name_normalized': normalizeText('Resistores'),
-      'description': 'Resistores de diversos valores',
-    });
-    await db.insert('categories', {
-      'name': 'Capacitores',
-      'name_normalized': normalizeText('Capacitores'),
-      'description': 'Capacitores eletrolíticos e cerâmicos',
-    });
-    await db.insert('categories', {
-      'name': 'Diodos',
-      'name_normalized': normalizeText('Diodos'),
-      'description': 'Diodos retificadores e LEDs',
-    });
-    await db.insert('categories', {
-      'name': 'Circuitos Integrados',
-      'name_normalized': normalizeText('Circuitos Integrados'),
-      'description': 'CIs diversos',
-    });
   }
 }
