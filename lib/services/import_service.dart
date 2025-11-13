@@ -15,10 +15,9 @@ class ImportService {
   ImportService({
     required ICategoryRepository categoryRepository,
     required IComponentRepository componentRepository,
-  }) : _categoryRepository = categoryRepository,
-       _componentRepository = componentRepository;
+  })  : _categoryRepository = categoryRepository,
+        _componentRepository = componentRepository;
 
-  /// Parse o arquivo CSV e retorna lista de dados para preview
   Future<List<ImportPreviewData>> parseCSVForPreview(String filePath) async {
     final file = File(filePath);
     final contents = await file.readAsString(encoding: utf8);
@@ -29,15 +28,12 @@ class ImportService {
       throw Exception('Arquivo CSV vazio');
     }
 
-    // Primeira linha contém cabeçalhos
     final headers = rows[0].map((h) => normalizeText(h.toString())).toList();
 
-    // Validar colunas obrigatórias
     _validateHeaders(headers);
 
     final previewData = <ImportPreviewData>[];
 
-    // Processar linhas de dados (pular cabeçalho)
     for (var i = 1; i < rows.length; i++) {
       final row = rows[i];
       if (row.isEmpty || _isRowEmpty(row)) continue;
@@ -46,7 +42,6 @@ class ImportService {
         final data = _parseRowToPreview(headers, row);
         previewData.add(data);
       } catch (e) {
-        // Ignorar linhas com erro no preview
         continue;
       }
     }
@@ -54,8 +49,7 @@ class ImportService {
     return previewData;
   }
 
-  /// Importa os componentes do arquivo CSV
-  Future<ImportResult> importFromCSV(String filePath) async {
+  Future<ImportResult> validateImport(String filePath) async {
     final file = File(filePath);
     final contents = await file.readAsString(encoding: utf8);
 
@@ -68,11 +62,9 @@ class ImportService {
     final headers = rows[0].map((h) => normalizeText(h.toString())).toList();
     _validateHeaders(headers);
 
-    // Carregar categorias e componentes existentes
     final existingCategories = await _categoryRepository.getAll();
     final existingComponents = await _componentRepository.getAll();
 
-    // Maps para busca rápida
     final categoryMap = <String, Category>{};
     for (var cat in existingCategories) {
       categoryMap[normalizeText(cat.name)] = cat;
@@ -90,7 +82,6 @@ class ImportService {
     int successCount = 0;
     int updatedCount = 0;
 
-    // Processar cada linha
     for (var i = 1; i < rows.length; i++) {
       final lineNumber = i + 1;
       final row = rows[i];
@@ -98,24 +89,137 @@ class ImportService {
       if (row.isEmpty || _isRowEmpty(row)) continue;
 
       try {
-        // Extrair dados da linha
         final rowData = _parseRow(headers, row);
 
-        // Validar dados obrigatórios
         final validationError = _validateRowData(rowData);
         if (validationError != null) {
           errors.add(ImportError(lineNumber: lineNumber, message: validationError));
           continue;
         }
 
-        // Garantir que categoria existe
+        final categoryName = rowData['category'] as String;
+        final categoryNormalized = normalizeText(categoryName);
+
+        if (!categoryMap.containsKey(categoryNormalized)) {
+          if (!categoriesCreated.contains(categoryName)) {
+            categoriesCreated.add(categoryName);
+            warnings.add(
+              ImportWarning(
+                lineNumber: lineNumber,
+                message: 'Categoria "$categoryName" será criada automaticamente',
+              ),
+            );
+          }
+          categoryMap[categoryNormalized] = Category(name: categoryName);
+        }
+
+        final model = rowData['model'] as String;
+        final location = rowData['location'] as String;
+        final quantity = rowData['quantity'] as int;
+        final componentKey = _makeComponentKey(model, categoryName, location);
+
+        if (componentMap.containsKey(componentKey)) {
+          final existing = componentMap[componentKey]!;
+          final newQuantity = existing.quantity + quantity;
+
+          updatedCount++;
+          warnings.add(
+            ImportWarning(
+              lineNumber: lineNumber,
+              message:
+                  'Componente "$model" já existe - quantidade será somada (${existing.quantity} + $quantity = $newQuantity)',
+            ),
+          );
+
+          componentMap[componentKey] = existing.copyWith(quantity: newQuantity);
+        } else {
+          successCount++;
+          double unitCost = rowData['unitCost'] as double? ?? 0.0;
+          final totalValue = rowData['totalValue'] as double?;
+          if (unitCost == 0.0 && totalValue != null && totalValue > 0.0 && quantity > 0) {
+            unitCost = totalValue / quantity;
+          }
+
+          componentMap[componentKey] = Component(
+            categoryId: 0,
+            categoryName: categoryName,
+            model: model,
+            quantity: quantity,
+            location: location,
+            unitCost: unitCost,
+          );
+        }
+      } catch (e) {
+        errors.add(ImportError(lineNumber: lineNumber, message: 'Erro ao processar linha: $e'));
+      }
+    }
+
+    return ImportResult(
+      totalLines: rows.length - 1, // Excluir cabeçalho
+      successCount: successCount,
+      errorCount: errors.length,
+      updatedCount: updatedCount,
+      categoriesCreated: categoriesCreated,
+      errors: errors,
+      warnings: warnings,
+      wasExecuted: false, // Apenas validação
+    );
+  }
+
+  Future<ImportResult> executeImport(String filePath) async {
+    final file = File(filePath);
+    final contents = await file.readAsString(encoding: utf8);
+
+    final rows = const CsvToListConverter().convert(contents);
+
+    if (rows.isEmpty) {
+      throw Exception('Arquivo CSV vazio');
+    }
+
+    final headers = rows[0].map((h) => normalizeText(h.toString())).toList();
+    _validateHeaders(headers);
+
+    final existingCategories = await _categoryRepository.getAll();
+    final existingComponents = await _componentRepository.getAll();
+
+    final categoryMap = <String, Category>{};
+    for (var cat in existingCategories) {
+      categoryMap[normalizeText(cat.name)] = cat;
+    }
+
+    final componentMap = <String, Component>{};
+    for (var comp in existingComponents) {
+      final key = _makeComponentKey(comp.model, comp.categoryName, comp.location);
+      componentMap[key] = comp;
+    }
+
+    final errors = <ImportError>[];
+    final warnings = <ImportWarning>[];
+    final categoriesCreated = <String>[];
+    int successCount = 0;
+    int updatedCount = 0;
+
+    for (var i = 1; i < rows.length; i++) {
+      final lineNumber = i + 1;
+      final row = rows[i];
+
+      if (row.isEmpty || _isRowEmpty(row)) continue;
+
+      try {
+        final rowData = _parseRow(headers, row);
+
+        final validationError = _validateRowData(rowData);
+        if (validationError != null) {
+          errors.add(ImportError(lineNumber: lineNumber, message: validationError));
+          continue;
+        }
+
         final categoryName = rowData['category'] as String;
         final categoryDescription = rowData['categoryDescription'] as String?;
         final categoryNormalized = normalizeText(categoryName);
 
         Category category;
         if (!categoryMap.containsKey(categoryNormalized)) {
-          // Criar nova categoria
           category = Category(name: categoryName, description: categoryDescription);
           final categoryId = await _categoryRepository.create(category);
           category.id = categoryId;
@@ -131,7 +235,6 @@ class ImportService {
           category = categoryMap[categoryNormalized]!;
         }
 
-        // Calcular custo unitário
         final quantity = rowData['quantity'] as int;
         double unitCost = rowData['unitCost'] as double? ?? 0.0;
         final totalValue = rowData['totalValue'] as double?;
@@ -140,13 +243,11 @@ class ImportService {
           unitCost = totalValue / quantity;
         }
 
-        // Verificar se componente já existe (modelo + categoria + localização)
         final model = rowData['model'] as String;
         final location = rowData['location'] as String;
         final componentKey = _makeComponentKey(model, category.name, location);
 
         if (componentMap.containsKey(componentKey)) {
-          // Componente duplicado - somar quantidades e recalcular custo médio ponderado
           final existing = componentMap[componentKey]!;
           final newQuantity = existing.quantity + quantity;
           final newUnitCost =
@@ -172,7 +273,6 @@ class ImportService {
             ),
           );
         } else {
-          // Criar novo componente
           final component = Component(
             categoryId: category.id!,
             categoryName: category.name,
@@ -203,10 +303,20 @@ class ImportService {
       categoriesCreated: categoriesCreated,
       errors: errors,
       warnings: warnings,
+      wasExecuted: true,
     );
   }
 
-  /// Gera arquivo CSV template para download
+  Future<ImportResult> importFromCSV(String filePath) async {
+    final validation = await validateImport(filePath);
+
+    if (validation.hasErrors) {
+      return validation;
+    }
+
+    return await executeImport(filePath);
+  }
+
   Future<String> generateTemplate(String filePath) async {
     List<List<dynamic>> rows = [];
 
@@ -261,8 +371,6 @@ class ImportService {
     return filePath;
   }
 
-  // ========== Métodos Auxiliares ==========
-
   void _validateHeaders(List<String> headers) {
     final requiredColumns = ['modelo', 'categoria', 'quantidade'];
 
@@ -272,12 +380,10 @@ class ImportService {
       }
     }
 
-    // Validar que existe coluna de localização (aceita 'localizacao' ou 'caixa' para compatibilidade)
     if (!headers.contains('localizacao') && !headers.contains('caixa')) {
       throw Exception('Coluna obrigatória "Localização" ou "Caixa" não encontrada no CSV');
     }
 
-    // Validar que existe pelo menos uma coluna de custo
     if (!headers.contains('custo unitario') && !headers.contains('custo total')) {
       throw Exception('É necessário ter pelo menos uma coluna: "Custo Unitário" ou "Custo Total"');
     }

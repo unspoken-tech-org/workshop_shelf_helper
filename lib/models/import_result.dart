@@ -6,6 +6,7 @@ class ImportResult {
   final List<String> categoriesCreated;
   final List<ImportError> errors;
   final List<ImportWarning> warnings;
+  final bool wasExecuted;
 
   ImportResult({
     required this.totalLines,
@@ -15,11 +16,13 @@ class ImportResult {
     required this.categoriesCreated,
     required this.errors,
     required this.warnings,
+    this.wasExecuted = false,
   });
 
   bool get hasErrors => errors.isNotEmpty;
   bool get hasWarnings => warnings.isNotEmpty;
   bool get isSuccess => errorCount == 0;
+  bool get isValidationOnly => !wasExecuted;
 }
 
 class ImportError {

@@ -3,21 +3,40 @@ import 'package:workshop_shelf_helper/models/import_result.dart';
 
 class ImportResultDialog extends StatelessWidget {
   final ImportResult result;
+  final VoidCallback? onConfirm;
 
-  const ImportResultDialog({super.key, required this.result});
+  const ImportResultDialog({
+    super.key,
+    required this.result,
+    this.onConfirm,
+  });
 
   @override
   Widget build(BuildContext context) {
+    IconData icon;
+    Color iconColor;
+    String title;
+
+    if (result.wasExecuted) {
+      icon = result.isSuccess ? Icons.check_circle : Icons.warning;
+      iconColor = result.isSuccess ? Colors.green : Colors.orange;
+      title = 'Resultado da Importação';
+    } else if (result.hasErrors) {
+      icon = Icons.error;
+      iconColor = Colors.red;
+      title = 'Erros Encontrados';
+    } else {
+      icon = Icons.info;
+      iconColor = Colors.blue;
+      title = 'Validação Concluída';
+    }
+
     return AlertDialog(
       title: Row(
         children: [
-          Icon(
-            result.isSuccess ? Icons.check_circle : Icons.warning,
-            color: result.isSuccess ? Colors.green : Colors.orange,
-            size: 32,
-          ),
+          Icon(icon, color: iconColor, size: 32),
           const SizedBox(width: 12),
-          const Text('Resultado da Importação'),
+          Text(title),
         ],
       ),
       content: SizedBox(
@@ -27,6 +46,58 @@ class ImportResultDialog extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (!result.wasExecuted && result.hasErrors) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.shade200, width: 2),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.block, color: Colors.red.shade700, size: 24),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'A importação foi bloqueada devido a erros encontrados. Corrija os problemas no arquivo CSV e tente novamente.',
+                          style: TextStyle(
+                            color: Colors.red.shade900,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+              if (!result.wasExecuted && !result.hasErrors) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.shade200, width: 2),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle_outline, color: Colors.blue.shade700, size: 24),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Nenhum erro encontrado! Clique em "Finalizar Importação" para salvar os dados no sistema.',
+                          style: TextStyle(
+                            color: Colors.blue.shade900,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
               _buildStatisticsSection(),
               if (result.categoriesCreated.isNotEmpty) ...[
                 const SizedBox(height: 24),
@@ -38,10 +109,51 @@ class ImportResultDialog extends StatelessWidget {
           ),
         ),
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Fechar')),
-      ],
+      actions: _buildActions(context),
     );
+  }
+
+  List<Widget> _buildActions(BuildContext context) {
+    if (result.wasExecuted) {
+      return [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Fechar'),
+        ),
+      ];
+    } else if (result.hasErrors) {
+      return [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.red,
+          ),
+          child: const Text('Abortar'),
+        ),
+      ];
+    } else {
+      return [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        const SizedBox(width: 8),
+        ElevatedButton.icon(
+          onPressed: () {
+            Navigator.of(context).pop();
+            if (onConfirm != null) {
+              onConfirm!();
+            }
+          },
+          icon: const Icon(Icons.check),
+          label: const Text('Finalizar Importação'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green,
+            foregroundColor: Colors.white,
+          ),
+        ),
+      ];
+    }
   }
 
   Widget _buildStatisticsSection() {
@@ -144,9 +256,7 @@ class ImportResultDialog extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          ...result.warnings
-              .take(10)
-              .map(
+          ...result.warnings.take(10).map(
                 (warning) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(
@@ -197,9 +307,7 @@ class ImportResultDialog extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          ...result.errors
-              .take(10)
-              .map(
+          ...result.errors.take(10).map(
                 (error) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(

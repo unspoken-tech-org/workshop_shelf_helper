@@ -79,9 +79,41 @@ class _ImportScreenState extends State<ImportScreen> {
     });
 
     try {
-      final result = await _importService.importFromCSV(_selectedFilePath!);
+      final validationResult = await _importService.validateImport(_selectedFilePath!);
 
-      // Recarregar dados dos providers
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (!mounted) return;
+
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => ImportResultDialog(
+          result: validationResult,
+          onConfirm: validationResult.hasErrors ? null : () => _executeImport(),
+        ),
+      );
+    } catch (e) {
+      setState(() {
+        _error = 'Erro ao validar arquivo: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _executeImport() async {
+    if (_selectedFilePath == null) return;
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final result = await _importService.executeImport(_selectedFilePath!);
+
       if (mounted) {
         context.read<CategoryProvider>().loadCategories();
         context.read<ComponentProvider>().init();
@@ -92,7 +124,6 @@ class _ImportScreenState extends State<ImportScreen> {
       });
 
       if (mounted) {
-        // Mostrar dialog com resultado
         await showDialog(
           context: context,
           builder: (context) => ImportResultDialog(result: result),
@@ -108,7 +139,7 @@ class _ImportScreenState extends State<ImportScreen> {
       }
     } catch (e) {
       setState(() {
-        _error = 'Erro ao importar: $e';
+        _error = 'Erro ao executar importação: $e';
         _isLoading = false;
       });
     }
@@ -181,46 +212,45 @@ class _ImportScreenState extends State<ImportScreen> {
           ),
         ],
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildInstructionsCard(),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildInstructionsCard(),
+                  const SizedBox(height: 24),
+                  if (_selectedFilePath == null) ...[
+                    ImportDropzone(onFileSelected: _handleFileSelection),
+                    const SizedBox(height: 16),
+                    const Center(
+                      child: Text('ou', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: _pickFile,
+                      icon: const Icon(Icons.folder_open),
+                      label: const Text('Selecionar Arquivo'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ] else ...[
+                    _buildFileSelectedCard(),
                     const SizedBox(height: 24),
-                    if (_selectedFilePath == null) ...[
-                      ImportDropzone(onFileSelected: _handleFileSelection),
-                      const SizedBox(height: 16),
-                      const Center(
-                        child: Text('ou', style: TextStyle(fontSize: 16, color: Colors.grey)),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: _pickFile,
-                        icon: const Icon(Icons.folder_open),
-                        label: const Text('Selecionar Arquivo'),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                    ] else ...[
-                      _buildFileSelectedCard(),
+                    if (_error != null) _buildErrorCard(),
+                    if (_previewData != null) ...[
+                      _buildPreviewSection(),
                       const SizedBox(height: 24),
-                      if (_error != null) _buildErrorCard(),
-                      if (_previewData != null) ...[
-                        _buildPreviewSection(),
-                        const SizedBox(height: 24),
-                        _buildActionButtons(),
-                      ],
+                      _buildActionButtons(),
                     ],
                   ],
-                ),
+                ],
               ),
+            ),
     );
   }
 
