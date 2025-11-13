@@ -75,16 +75,32 @@ jobs:
         run: |
           # Extrai o conteúdo completo da tag anotada usando git cat-file
           $tagName = "${{ github.ref_name }}"
-          $tagContent = git cat-file -p $tagName
+          $tagContentArray = git cat-file -p $tagName
+          
+          # Junta as linhas mantendo as quebras de linha
+          $tagContent = $tagContentArray -join "`n"
           
           # Debug: mostra o conteúdo completo
           Write-Host "=== Conteudo completo da tag (cat-file) ==="
           Write-Host $tagContent
           Write-Host "==========================================="
           
-          # Busca pela palavra "Release" e extrai tudo a partir dela
-          if ($tagContent -match '(Release[\s\S]*)$') {
-            $tagMessage = $matches[1].Trim()
+          # Separa em linhas para processar
+          $lines = $tagContent -split '\r?\n'
+          
+          # Encontra a linha em branco que separa metadados da mensagem
+          $messageStartIndex = -1
+          for ($i = 0; $i -lt $lines.Length; $i++) {
+            if ([string]::IsNullOrWhiteSpace($lines[$i])) {
+              $messageStartIndex = $i + 1
+              break
+            }
+          }
+          
+          if ($messageStartIndex -gt 0 -and $messageStartIndex -lt $lines.Length) {
+            # Extrai a mensagem da tag (tudo após a linha em branco)
+            $tagMessage = ($lines[$messageStartIndex..($lines.Length-1)] -join "`n").Trim()
+            
             Write-Host "=== Mensagem da tag extraida ==="
             Write-Host $tagMessage
             Write-Host "================================"
@@ -102,10 +118,10 @@ jobs:
               Write-Host $notes
               echo "NOTES=$notes" >> $env:GITHUB_OUTPUT
             } else {
-              # Se não encontrar nada, usa a mensagem inteira exceto primeira linha
-              $lines = $tagMessage -split '\r?\n'
-              if ($lines.Length -gt 1) {
-                $notes = ($lines[1..($lines.Length-1)] -join "`n").Trim()
+              # Se não encontrar padrão específico, usa toda a mensagem exceto primeira linha
+              $msgLines = $tagMessage -split '\r?\n'
+              if ($msgLines.Length -gt 1) {
+                $notes = ($msgLines[1..($msgLines.Length-1)] -join "`n").Trim()
                 if ($notes) {
                   Write-Host "Notas extraidas do corpo completo (fallback 2):"
                   Write-Host $notes
@@ -115,12 +131,13 @@ jobs:
                   echo "NOTES=Nenhuma nota de release fornecida." >> $env:GITHUB_OUTPUT
                 }
               } else {
-                Write-Host "Tag sem corpo/mensagem"
-                echo "NOTES=Nenhuma nota de release fornecida." >> $env:GITHUB_OUTPUT
+                # Usa a mensagem inteira se só tiver uma linha
+                Write-Host "Tag com mensagem de linha unica, usando completa"
+                echo "NOTES=$tagMessage" >> $env:GITHUB_OUTPUT
               }
             }
           } else {
-            Write-Host "Palavra 'Release' nao encontrada na tag"
+            Write-Host "Nao foi possivel extrair mensagem da tag"
             echo "NOTES=Nenhuma nota de release fornecida." >> $env:GITHUB_OUTPUT
           }
       
