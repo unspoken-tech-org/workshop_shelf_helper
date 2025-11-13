@@ -29,6 +29,7 @@ class _ComponentsListScreenState extends State<ComponentsListScreen> {
   void initState() {
     super.initState();
     _componentProvider = context.read<ComponentProvider>();
+    _searchController.text = _componentProvider.filter.searchTerm ?? '';
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _componentProvider.init();
     });
@@ -36,6 +37,7 @@ class _ComponentsListScreenState extends State<ComponentsListScreen> {
 
   @override
   void dispose() {
+    _componentProvider.clearFilters(notify: false);
     _searchController.dispose();
     super.dispose();
   }
@@ -68,16 +70,19 @@ class _ComponentsListScreenState extends State<ComponentsListScreen> {
           if (_showFilters) ComponentFilters(searchController: _searchController),
           Expanded(
             child: Selector<
-              ComponentProvider,
-              ({bool isLoading, String? error, List<Component> components, ComponentFilter filter})
-            >(
-              selector:
-                  (context, provider) => (
-                    isLoading: provider.isLoading,
-                    error: provider.error,
-                    components: provider.components,
-                    filter: provider.filter,
-                  ),
+                ComponentProvider,
+                ({
+                  bool isLoading,
+                  String? error,
+                  List<Component> components,
+                  ComponentFilter filter
+                })>(
+              selector: (context, provider) => (
+                isLoading: provider.isLoading,
+                error: provider.error,
+                components: provider.components,
+                filter: provider.filter,
+              ),
               builder: (context, state, child) {
                 if (state.isLoading) {
                   return const Center(child: CircularProgressIndicator());
@@ -162,15 +167,14 @@ class _ComponentsListScreenState extends State<ComponentsListScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder:
-            (_) => MultiProvider(
-              providers: [
-                ChangeNotifierProvider.value(value: context.read<CategoryProvider>()),
-                ChangeNotifierProvider.value(value: context.read<ComponentProvider>()),
-                ChangeNotifierProvider.value(value: context.read<ReportProvider>()),
-              ],
-              child: ComponentFormScreen(componentId: component?.id),
-            ),
+        builder: (_) => MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: context.read<CategoryProvider>()),
+            ChangeNotifierProvider.value(value: context.read<ComponentProvider>()),
+            ChangeNotifierProvider.value(value: context.read<ReportProvider>()),
+          ],
+          child: ComponentFormScreen(componentId: component?.id),
+        ),
       ),
     ).then((_) => _componentProvider.filterComponents());
   }
@@ -178,13 +182,12 @@ class _ComponentsListScreenState extends State<ComponentsListScreen> {
   Future<void> _confirmDeletion(BuildContext context, Component component) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (context) => ConfirmDialog(
-            title: 'Excluir Componente',
-            content: 'Tem certeza que deseja excluir o componente "${component.model}"?',
-            confirmText: 'Excluir',
-            cancelText: 'Cancelar',
-          ),
+      builder: (context) => ConfirmDialog(
+        title: 'Excluir Componente',
+        content: 'Tem certeza que deseja excluir o componente "${component.model}"?',
+        confirmText: 'Excluir',
+        cancelText: 'Cancelar',
+      ),
     );
 
     if (confirmed == true && context.mounted) {

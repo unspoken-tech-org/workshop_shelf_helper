@@ -25,16 +25,16 @@ class ComponentProvider with ChangeNotifier {
     _loadComponents();
   }
 
-  void _loadComponents() async {
+  void _loadComponents({bool notify = true}) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    if (notify) notifyListeners();
 
     try {
       _filteredComponents = await _repository.search(_filter);
     } finally {
       _isLoading = false;
-      notifyListeners();
+      if (notify) notifyListeners();
     }
   }
 
@@ -132,9 +132,9 @@ class ComponentProvider with ChangeNotifier {
     _loadComponents();
   }
 
-  Future<void> clearFilters() async {
+  Future<void> clearFilters({bool notify = true}) async {
     _filter.clear();
-    _loadComponents();
+    _loadComponents(notify: notify);
   }
 
   Future<List<Component>> getLowStockComponents(int threshold) async {
