@@ -110,13 +110,19 @@ jobs:
               $notes = $matches[1].Trim()
               Write-Host "Notas extraidas da secao Novidades:"
               Write-Host $notes
-              echo "NOTES=$notes" >> $env:GITHUB_OUTPUT
+              # Formato multiline para GitHub Output
+              "NOTES<<EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+              $notes | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+              "EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
             } elseif ($tagMessage -match 'Release\s+[\d\.]+\s*\r?\n\r?\n([\s\S]+)') {
               # Fallback: usa tudo depois da primeira linha "Release X.Y.Z"
               $notes = $matches[1].Trim()
               Write-Host "Notas extraidas do corpo da tag (fallback):"
               Write-Host $notes
-              echo "NOTES=$notes" >> $env:GITHUB_OUTPUT
+              # Formato multiline para GitHub Output
+              "NOTES<<EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+              $notes | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+              "EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
             } else {
               # Se não encontrar padrão específico, usa toda a mensagem exceto primeira linha
               $msgLines = $tagMessage -split '\r?\n'
@@ -125,20 +131,29 @@ jobs:
                 if ($notes) {
                   Write-Host "Notas extraidas do corpo completo (fallback 2):"
                   Write-Host $notes
-                  echo "NOTES=$notes" >> $env:GITHUB_OUTPUT
+                  # Formato multiline para GitHub Output
+                  "NOTES<<EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+                  $notes | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+                  "EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
                 } else {
                   Write-Host "Nenhuma nota encontrada na tag"
-                  echo "NOTES=Nenhuma nota de release fornecida." >> $env:GITHUB_OUTPUT
+                  "NOTES<<EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+                  "Nenhuma nota de release fornecida." | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+                  "EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
                 }
               } else {
                 # Usa a mensagem inteira se só tiver uma linha
                 Write-Host "Tag com mensagem de linha unica, usando completa"
-                echo "NOTES=$tagMessage" >> $env:GITHUB_OUTPUT
+                "NOTES<<EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+                $tagMessage | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+                "EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
               }
             }
           } else {
             Write-Host "Nao foi possivel extrair mensagem da tag"
-            echo "NOTES=Nenhuma nota de release fornecida." >> $env:GITHUB_OUTPUT
+            "NOTES<<EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            "Nenhuma nota de release fornecida." | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            "EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           }
       
       - name: Criar GitHub Release e Upload
