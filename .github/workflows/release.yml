@@ -17,6 +17,9 @@ jobs:
         with:
           fetch-depth: 0  # Clone completo para acessar tags anotadas
       
+      - name: Fetch tags
+        run: git fetch --force --tags
+      
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
