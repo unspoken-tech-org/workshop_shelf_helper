@@ -145,7 +145,9 @@ class HomeDrawer extends StatelessWidget {
                     child: const ImportScreen(),
                   ),
                 ),
-              );
+              ).then((_) {
+                context.read<ReportProvider>().loadDashboardData();
+              });
             },
           ),
           const Divider(),
