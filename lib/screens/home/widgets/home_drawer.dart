@@ -195,31 +195,27 @@ class HomeDrawer extends StatelessWidget {
     try {
       final updateInfo = await updateService.checkForUpdates();
 
-      if (context.mounted) {
-        Navigator.of(context).pop();
+      Navigator.of(context).pop();
 
-        if (updateInfo != null) {
-          await UpdateDialog.show(context, updateInfo, updateService);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Não foi possível verificar atualizações'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        Navigator.of(context).pop();
-
+      if (updateInfo != null) {
+        await UpdateDialog.show(context, updateInfo, updateService);
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro ao verificar atualizações: $e'),
-            backgroundColor: Colors.red,
+          const SnackBar(
+            content: Text('Não foi possível verificar atualizações'),
+            backgroundColor: Colors.orange,
           ),
         );
       }
+    } catch (e) {
+      Navigator.of(context).pop();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao verificar atualizações: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 }

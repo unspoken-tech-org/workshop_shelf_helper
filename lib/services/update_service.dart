@@ -125,21 +125,21 @@ class UpdateService {
     result = result.replaceAll(RegExp(r'^#{1,6}\s+', multiLine: true), '');
 
     // Remove negrito (**texto** ou __texto__)
-    result = result.replaceAll(RegExp(r'\*\*(.+?)\*\*'), r'$1');
-    result = result.replaceAll(RegExp(r'__(.+?)__'), r'$1');
+    result = result.replaceAllMapped(RegExp(r'\*\*(.+?)\*\*'), (match) => match.group(1)!);
+    result = result.replaceAllMapped(RegExp(r'__(.+?)__'), (match) => match.group(1)!);
 
     // Remove itálico (*texto* ou _texto_)
-    result = result.replaceAll(RegExp(r'\*(.+?)\*'), r'$1');
-    result = result.replaceAll(RegExp(r'_(.+?)_'), r'$1');
+    result = result.replaceAllMapped(RegExp(r'\*(.+?)\*'), (match) => match.group(1)!);
+    result = result.replaceAllMapped(RegExp(r'_(.+?)_'), (match) => match.group(1)!);
 
     // Remove linhas horizontais (---, ***, ___)
     result = result.replaceAll(RegExp(r'^[\-\*_]{3,}\s*$', multiLine: true), '');
 
     // Converte links [texto](url) para apenas texto
-    result = result.replaceAll(RegExp(r'\[([^\]]+)\]\([^\)]+\)'), r'$1');
+    result = result.replaceAllMapped(RegExp(r'\[([^\]]+)\]\([^\)]+\)'), (match) => match.group(1)!);
 
     // Remove backticks de código inline (`código`)
-    result = result.replaceAll(RegExp(r'`([^`]+)`'), r'$1');
+    result = result.replaceAllMapped(RegExp(r'`([^`]+)`'), (match) => match.group(1)!);
 
     // Remove blocos de código (```...```)
     result = result.replaceAll(RegExp(r'```[\s\S]*?```'), '');
