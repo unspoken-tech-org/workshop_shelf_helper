@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout código
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Clone completo para acessar tags anotadas
       
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
