@@ -50,49 +50,52 @@ class _RestockAlertsSectionState extends State<RestockAlertsSection> {
           '⚠️ Alertas de Reposição',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
-        Selector<
-          ReportProvider,
-          ({List<ComponentAlert> components, bool isLoadingMore, bool hasMore})
-        >(
-          selector:
-              (context, provider) => (
-                components: provider.lowStockComponents,
-                isLoadingMore: provider.isLoadingMore,
-                hasMore: provider.hasMoreLowStockItems,
-              ),
+        Selector<ReportProvider,
+            ({List<ComponentAlert> components, bool isLoadingMore, bool hasMore})>(
+          selector: (context, provider) => (
+            components: provider.lowStockComponents,
+            isLoadingMore: provider.isLoadingMore,
+            hasMore: provider.hasMoreLowStockItems,
+          ),
           builder: (context, data, child) {
             if (data.components.isEmpty && !data.isLoadingMore) {
               return const NoReplenishmentCard();
             }
 
-            return SizedBox(
-              height: 200,
-              child: ListView.builder(
-                controller: _scrollController,
-                scrollDirection: Axis.horizontal,
-                itemCount: data.components.length + (data.isLoadingMore ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index >= data.components.length) {
-                    return const SizedBox(
-                      width: 200,
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  }
+            return Scrollbar(
+              thumbVisibility: true,
+              controller: _scrollController,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: SizedBox(
+                  height: 200,
+                  child: ListView.separated(
+                    controller: _scrollController,
+                    scrollDirection: Axis.horizontal,
+                    itemCount: data.components.length + (data.isLoadingMore ? 1 : 0),
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    separatorBuilder: (context, index) => const SizedBox(width: 4),
+                    itemBuilder: (context, index) {
+                      if (index >= data.components.length) {
+                        return const SizedBox(
+                          width: 200,
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
 
-                  final component = data.components[index];
+                      final component = data.components[index];
 
-                  return SizedBox(
-                    width: 200,
-                    height: 200,
-                    child: ComponentAlertCard(
-                      key: Key('${component.id}-${component.quantity}'),
-                      alert: component,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (_) => MultiProvider(
+                      return SizedBox(
+                        width: 200,
+                        height: 200,
+                        child: ComponentAlertCard(
+                          key: Key('${component.id}-${component.quantity}'),
+                          alert: component,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => MultiProvider(
                                   providers: [
                                     ChangeNotifierProvider.value(
                                       value: context.read<ComponentProvider>(),
@@ -106,14 +109,16 @@ class _RestockAlertsSectionState extends State<RestockAlertsSection> {
                                   ],
                                   child: ComponentFormScreen(componentId: component.id),
                                 ),
-                          ),
-                        ).then((_) {
-                          context.read<ReportProvider>().loadDashboardData();
-                        });
-                      },
-                    ),
-                  );
-                },
+                              ),
+                            ).then((_) {
+                              context.read<ReportProvider>().loadDashboardData();
+                            });
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
             );
           },
