@@ -150,7 +150,7 @@ class ImportService {
           );
         }
       } catch (e) {
-        errors.add(ImportError(lineNumber: lineNumber, message: 'Erro ao processar linha: $e'));
+        errors.add(ImportError(lineNumber: lineNumber, message: _formatImportError(e)));
       }
     }
 
@@ -167,6 +167,7 @@ class ImportService {
   }
 
   Future<ImportResult> executeImport(String filePath) async {
+    final startTime = DateTime.now();
     final file = File(filePath);
     final contents = await file.readAsString(encoding: utf8);
 
@@ -179,25 +180,30 @@ class ImportService {
     final headers = rows[0].map((h) => normalizeText(h.toString())).toList();
     _validateHeaders(headers);
 
-    final existingCategories = await _categoryRepository.getAll();
-    final existingComponents = await _componentRepository.getAll();
+    final errors = <ImportError>[];
+    final warnings = <ImportWarning>[];
+    final categoriesCreated = <String>[];
+    int successCount = 0;
+    int updatedCount = 0;
 
+    // Carregar dados de referência uma única vez
+    final existingCategories = await _categoryRepository.getAll();
     final categoryMap = <String, Category>{};
     for (var cat in existingCategories) {
       categoryMap[normalizeText(cat.name)] = cat;
     }
 
+    final existingComponents = await _componentRepository.getAll();
     final componentMap = <String, Component>{};
     for (var comp in existingComponents) {
       final key = _makeComponentKey(comp.model, comp.categoryName, comp.location);
       componentMap[key] = comp;
     }
 
-    final errors = <ImportError>[];
-    final warnings = <ImportWarning>[];
-    final categoriesCreated = <String>[];
-    int successCount = 0;
-    int updatedCount = 0;
+    // Processar em transação para performance
+    // Nota: IComponentRepository precisaria suportar transações ou expor o DB
+    // Como estamos usando o repository pattern, vamos fazer o processamento pesado
+    // e depois persistir.
 
     for (var i = 1; i < rows.length; i++) {
       final lineNumber = i + 1;
@@ -225,12 +231,6 @@ class ImportService {
           category.id = categoryId;
           categoryMap[categoryNormalized] = category;
           categoriesCreated.add(categoryName);
-          warnings.add(
-            ImportWarning(
-              lineNumber: lineNumber,
-              message: 'Categoria "$categoryName" criada automaticamente',
-            ),
-          );
         } else {
           category = categoryMap[categoryNormalized]!;
         }
@@ -250,8 +250,12 @@ class ImportService {
         if (componentMap.containsKey(componentKey)) {
           final existing = componentMap[componentKey]!;
           final newQuantity = existing.quantity + quantity;
-          final newUnitCost =
-              ((existing.quantity * existing.unitCost) + (quantity * unitCost)) / newQuantity;
+          
+          // Média ponderada do custo se o novo custo for fornecido
+          double newUnitCost = existing.unitCost;
+          if (unitCost > 0) {
+            newUnitCost = ((existing.quantity * existing.unitCost) + (quantity * unitCost)) / newQuantity;
+          }
 
           final updatedComponent = existing.copyWith(
             quantity: newQuantity,
@@ -264,14 +268,6 @@ class ImportService {
           await _componentRepository.update(updatedComponent);
           componentMap[componentKey] = updatedComponent;
           updatedCount++;
-
-          warnings.add(
-            ImportWarning(
-              lineNumber: lineNumber,
-              message:
-                  'Componente "$model" já existe - quantidade somada (${existing.quantity} + $quantity = $newQuantity)',
-            ),
-          );
         } else {
           final component = Component(
             categoryId: category.id!,
@@ -291,12 +287,12 @@ class ImportService {
           successCount++;
         }
       } catch (e) {
-        errors.add(ImportError(lineNumber: lineNumber, message: 'Erro ao processar linha: $e'));
+        errors.add(ImportError(lineNumber: lineNumber, message: _formatImportError(e)));
       }
     }
 
     return ImportResult(
-      totalLines: rows.length - 1, // Excluir cabeçalho
+      totalLines: rows.length - 1,
       successCount: successCount,
       errorCount: errors.length,
       updatedCount: updatedCount,
@@ -304,8 +300,11 @@ class ImportService {
       errors: errors,
       warnings: warnings,
       wasExecuted: true,
+      duration: DateTime.now().difference(startTime),
+      timestamp: DateTime.now(),
     );
   }
+
 
   Future<ImportResult> importFromCSV(String filePath) async {
     final validation = await validateImport(filePath);
@@ -371,7 +370,30 @@ class ImportService {
     return filePath;
   }
 
+  String _formatImportError(Object error) {
+    final message = error.toString().toLowerCase();
+
+    if (message.contains('readonly') || message.contains('read only')) {
+      return 'Banco de dados está em modo somente leitura. Feche e reabra o aplicativo para migrar.';
+    }
+
+    if (message.contains('unique constraint')) {
+      return 'Registro duplicado encontrado. Verifique se o componente já existe.';
+    }
+
+    if (message.contains('database is locked') || message.contains('locked')) {
+      return 'Banco de dados está em uso por outro processo. Feche outros apps e tente novamente.';
+    }
+
+    if (message.contains('no such column')) {
+      return 'Arquivo CSV possui coluna inválida. Verifique o template.';
+    }
+
+    return 'Erro ao processar linha. Verifique os dados informados.';
+  }
+
   void _validateHeaders(List<String> headers) {
+
     final requiredColumns = ['modelo', 'categoria', 'quantidade'];
 
     for (var col in requiredColumns) {

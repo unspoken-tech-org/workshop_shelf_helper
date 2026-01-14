@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
@@ -8,6 +9,10 @@ import 'package:workshop_shelf_helper/models/import_result.dart';
 import 'package:workshop_shelf_helper/screens/import/widgets/import_dropzone.dart';
 import 'package:workshop_shelf_helper/screens/import/widgets/import_preview_table.dart';
 import 'package:workshop_shelf_helper/screens/import/widgets/import_result_dialog.dart';
+import 'package:workshop_shelf_helper/screens/import/widgets/import_progress_widget.dart';
+import 'package:workshop_shelf_helper/widgets/error_message_widget.dart';
+import 'package:workshop_shelf_helper/utils/error_logger.dart';
+import 'package:workshop_shelf_helper/utils/csv_validator.dart';
 
 class ImportScreen extends StatefulWidget {
   const ImportScreen({super.key});
@@ -20,7 +25,9 @@ class _ImportScreenState extends State<ImportScreen> {
   String? _selectedFilePath;
   List<ImportPreviewData>? _previewData;
   bool _isLoading = false;
-  String? _error;
+  Object? _error;
+  int _importProgressCurrent = 0;
+  int _importProgressTotal = 0;
 
   late final ImportService _importService;
 
@@ -51,8 +58,9 @@ class _ImportScreenState extends State<ImportScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      ErrorLogger.log(e);
       setState(() {
-        _error = 'Erro ao ler arquivo: $e';
+        _error = e;
         _isLoading = false;
       });
     }
@@ -79,7 +87,8 @@ class _ImportScreenState extends State<ImportScreen> {
     });
 
     try {
-      final validationResult = await _importService.validateImport(_selectedFilePath!);
+      final validator = CsvValidator();
+      final validationResult = await validator.validate(File(_selectedFilePath!));
 
       setState(() {
         _isLoading = false;
@@ -87,17 +96,44 @@ class _ImportScreenState extends State<ImportScreen> {
 
       if (!mounted) return;
 
-      await showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => ImportResultDialog(
-          result: validationResult,
-          onConfirm: validationResult.hasErrors ? null : () => _executeImport(),
-        ),
-      );
+      if (!validationResult.isValid) {
+        setState(() {
+          _error = Exception(
+            'Encontramos problemas no arquivo:\n${validationResult.errors.join('\n')}',
+          );
+        });
+        return;
+      }
+
+      if (validationResult.hasWarnings) {
+        final proceed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Avisos de Validação'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Foram encontrados alguns avisos, mas você ainda pode prosseguir:'),
+                const SizedBox(height: 8),
+                Text(validationResult.warnings.join('\n'),
+                    style: const TextStyle(fontSize: 12, color: Colors.orange)),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Corrigir')),
+              ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Prosseguir')),
+            ],
+          ),
+        );
+        if (proceed != true) return;
+      }
+
+      await _executeImport();
     } catch (e) {
+      ErrorLogger.log(e);
       setState(() {
-        _error = 'Erro ao validar arquivo: $e';
+        _error = e;
         _isLoading = false;
       });
     }
@@ -108,6 +144,8 @@ class _ImportScreenState extends State<ImportScreen> {
 
     setState(() {
       _isLoading = true;
+      _importProgressCurrent = 0;
+      _importProgressTotal = _previewData?.length ?? 0;
       _error = null;
     });
 
@@ -129,7 +167,6 @@ class _ImportScreenState extends State<ImportScreen> {
           builder: (context) => ImportResultDialog(result: result),
         );
 
-        // Se importação teve sucesso, limpar tela
         if (result.isSuccess) {
           setState(() {
             _selectedFilePath = null;
@@ -138,8 +175,9 @@ class _ImportScreenState extends State<ImportScreen> {
         }
       }
     } catch (e) {
+      ErrorLogger.log(e);
       setState(() {
-        _error = 'Erro ao executar importação: $e';
+        _error = e;
         _isLoading = false;
       });
     }
@@ -154,14 +192,9 @@ class _ImportScreenState extends State<ImportScreen> {
         allowedExtensions: ['csv'],
       );
 
-      if (filePath == null) {
-        // Usuário cancelou a operação
-        return;
-      }
+      if (filePath == null) return;
 
-      setState(() {
-        _isLoading = true;
-      });
+      setState(() => _isLoading = true);
 
       await _importService.generateTemplate(filePath);
 
@@ -181,11 +214,7 @@ class _ImportScreenState extends State<ImportScreen> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -195,6 +224,17 @@ class _ImportScreenState extends State<ImportScreen> {
       _previewData = null;
       _error = null;
     });
+  }
+
+  Widget _buildErrorCard() {
+    return ErrorMessageWidget(
+      error: _error ?? Exception('Erro inesperado.'),
+      onRetry: () {
+        if (_selectedFilePath != null) {
+          _handleFileSelection(_selectedFilePath!);
+        }
+      },
+    );
   }
 
   @override
@@ -213,7 +253,23 @@ class _ImportScreenState extends State<ImportScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (_importProgressTotal > 0)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 48),
+                      child: ImportProgressWidget(
+                        current: _importProgressCurrent,
+                        total: _importProgressTotal,
+                      ),
+                    )
+                  else
+                    const CircularProgressIndicator(),
+                ],
+              ),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -224,9 +280,7 @@ class _ImportScreenState extends State<ImportScreen> {
                   if (_selectedFilePath == null) ...[
                     ImportDropzone(onFileSelected: _handleFileSelection),
                     const SizedBox(height: 16),
-                    const Center(
-                      child: Text('ou', style: TextStyle(fontSize: 16, color: Colors.grey)),
-                    ),
+                    const Center(child: Text('ou', style: TextStyle(fontSize: 16, color: Colors.grey))),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
                       onPressed: _pickFile,
@@ -264,34 +318,16 @@ class _ImportScreenState extends State<ImportScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.info_outline, color: Colors.blue.shade700),
+                Icon(Icons.info_outline, color: Colors.blue[700]),
                 const SizedBox(width: 8),
-                const Text(
-                  'Instruções',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
+                const Text('Instruções', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ],
             ),
             const SizedBox(height: 16),
-            const Text(
-              '1. Baixe o template CSV clicando no ícone de download acima',
-              style: TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              '2. Preencha o arquivo com os dados dos componentes',
-              style: TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              '3. Arraste o arquivo para a área indicada ou use o botão "Selecionar Arquivo"',
-              style: TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              '4. Revise os dados no preview e clique em "Importar"',
-              style: TextStyle(fontSize: 14),
-            ),
+            const Text('1. Baixe o template CSV clicando no ícone de download acima'),
+            const Text('2. Preencha o arquivo com os dados dos componentes'),
+            const Text('3. Arraste o arquivo para a área indicada ou use o botão "Selecionar Arquivo"'),
+            const Text('4. Revise os dados no preview e clique em "Importar"'),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
@@ -305,26 +341,15 @@ class _ImportScreenState extends State<ImportScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.lightbulb_outline, color: Colors.orange.shade700, size: 20),
+                      Icon(Icons.lightbulb_outline, color: Colors.orange[700], size: 20),
                       const SizedBox(width: 8),
                       const Text('Dicas', style: TextStyle(fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    '• Categorias inexistentes serão criadas automaticamente',
-                    style: TextStyle(fontSize: 13),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    '• Componentes duplicados (mesmo modelo + categoria + localização) terão suas quantidades somadas',
-                    style: TextStyle(fontSize: 13),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    '• Você pode informar "Custo Unitário" OU "Custo Total" - o outro será calculado automaticamente',
-                    style: TextStyle(fontSize: 13),
-                  ),
+                  const Text('• Categorias inexistentes serão criadas automaticamente'),
+                  const Text('• Componentes duplicados terão suas quantidades somadas'),
+                  const Text('• Informe "Custo Unitário" OU "Custo Total"'),
                 ],
               ),
             ),
@@ -342,7 +367,7 @@ class _ImportScreenState extends State<ImportScreen> {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.green.shade700),
+            Icon(Icons.check_circle, color: Colors.green[700]),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -350,7 +375,8 @@ class _ImportScreenState extends State<ImportScreen> {
                 children: [
                   const Text('Arquivo selecionado:', style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
-                  Text(_selectedFilePath!.split('/').last, style: const TextStyle(fontSize: 13)),
+                  Text(_selectedFilePath!.split(Platform.pathSeparator).last,
+                      style: const TextStyle(fontSize: 13)),
                 ],
               ),
             ),
@@ -359,23 +385,6 @@ class _ImportScreenState extends State<ImportScreen> {
               onPressed: _clearSelection,
               tooltip: 'Remover arquivo',
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildErrorCard() {
-    return Card(
-      elevation: 2,
-      color: Colors.red.shade50,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(Icons.error, color: Colors.red.shade700),
-            const SizedBox(width: 12),
-            Expanded(child: Text(_error!, style: TextStyle(color: Colors.red.shade900))),
           ],
         ),
       ),
@@ -393,14 +402,9 @@ class _ImportScreenState extends State<ImportScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Preview dos Dados',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  '${_previewData!.length} componente(s)',
-                  style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
-                ),
+                const Text('Preview dos Dados', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text('${_previewData!.length} componente(s)',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[700])),
               ],
             ),
             const SizedBox(height: 16),
