@@ -356,3 +356,10 @@ class MyProvider with ChangeNotifier {
 8. Use `async/await` with proper error handling
 9. Call `notifyListeners()` in finally blocks for state management
 10. Check the Flutter rules in `.cursor/rules/flutter-rules.mdc` before making widget changes
+
+## Active Technologies
+- Dart 3.x / Flutter 3.16+ + sqflite_common_ffi ^2.3.0 (SQLite desktop), path_provider ^2.1.1, csv ^6.0.0, provider ^6.1.1 (001-fix-readonly-db-import)
+- SQLite local (migrar de Program Files para %LOCALAPPDATA%\Workshop Shelf Helper\) (001-fix-readonly-db-import)
+
+## Recent Changes
+- 001-fix-readonly-db-import: Added Dart 3.x / Flutter 3.16+ + sqflite_common_ffi ^2.3.0 (SQLite desktop), path_provider ^2.1.1, csv ^6.0.0, provider ^6.1.1
