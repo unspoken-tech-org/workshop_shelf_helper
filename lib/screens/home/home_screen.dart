@@ -17,6 +17,10 @@ import 'package:workshop_shelf_helper/screens/home/widgets/top_categories_sectio
 import 'package:workshop_shelf_helper/screens/home/widgets/quick_actions_section.dart';
 import 'package:workshop_shelf_helper/services/update_service.dart';
 import 'package:workshop_shelf_helper/widgets/update_dialog.dart';
+import 'package:workshop_shelf_helper/services/database_migration_service.dart';
+import 'package:workshop_shelf_helper/widgets/migration_dialog.dart';
+import 'package:workshop_shelf_helper/models/database_migration_result.dart';
+
 
 class HomeScreenMultiProvider extends StatelessWidget {
   const HomeScreenMultiProvider({super.key});
@@ -50,15 +54,95 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  Future<DatabaseMigrationResult>? _migrationFuture;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkDatabaseMigration();
       context.read<ReportProvider>().loadDashboardData();
       _checkForUpdatesOnStartup();
     });
   }
+
+  Future<void> _checkDatabaseMigration() async {
+    final migrationService = DatabaseMigrationService();
+    final needsMigration = await migrationService.checkMigrationNeeded();
+
+    if (needsMigration && mounted) {
+      final shouldMigrate = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => MigrationDialog(
+          onConfirm: () => Navigator.of(context).pop(true),
+        ),
+      );
+
+      if (shouldMigrate == true && mounted) {
+        // Mostra o diálogo de progresso
+        DatabaseMigrationResult? result;
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => StatefulBuilder(
+              builder: (context, setDialogState) {
+                if (result == null) {
+                  if (_migrationFuture == null) {
+                    _migrationFuture = _runMigration(migrationService);
+                    _migrationFuture!.then((res) {
+                      if (mounted) {
+                        setDialogState(() {
+                          result = res;
+                        });
+                      }
+                    });
+                  }
+
+                  return MigrationDialog(
+                    onConfirm: () {},
+                    isMigrating: true,
+                  );
+                }
+
+                return MigrationDialog(
+                  onConfirm: () {},
+                  result: result,
+                );
+              },
+            ),
+          ).then((_) {
+            // Após fechar o diálogo de resultado, recarrega os dados
+            if (mounted) {
+              setState(() {
+                _migrationFuture = null;
+              });
+              context.read<ReportProvider>().loadDashboardData();
+              context.read<CategoryProvider>().loadCategories();
+              context.read<ComponentProvider>().init();
+            }
+          });
+        }
+      }
+    }
+  }
+
+  Future<DatabaseMigrationResult> _runMigration(DatabaseMigrationService service) async {
+    try {
+      return await service.migrateDatabase();
+    } catch (e) {
+      return DatabaseMigrationResult(
+        success: false,
+        oldPath: '',
+        newPath: '',
+        databaseSize: 0,
+        duration: Duration.zero,
+        error: e.toString(),
+      );
+    }
+  }
+
 
   Future<void> _checkForUpdatesOnStartup() async {
     try {
