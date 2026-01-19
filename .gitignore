@@ -51,6 +51,19 @@ windows/flutter/ephemeral/
 *.db-shm
 *.db-wal
 
+# Environment
+.env*
+
+# Windows
+Thumbs.db
+
+# Temporary files
+*.tmp
+
+
 # Generated files
 *.g.dart
 *.freezed.dart
+
+/.specify
+/specs

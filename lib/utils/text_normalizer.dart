@@ -5,7 +5,10 @@ String normalizeText(String text) {
 
   normalized = normalized.toLowerCase();
 
+  normalized = normalized.replaceAll(RegExp(r'[_-]+'), ' ');
+
   normalized = normalized.trim().replaceAll(RegExp(r'\s+'), ' ');
+
 
   return normalized;
 }

@@ -77,8 +77,6 @@ class _ImportDropzoneState extends State<ImportDropzone> {
                 ),
               ),
               const SizedBox(height: 8),
-              if (!_isDragging)
-                Text('ou', style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
             ],
           ),
         ),

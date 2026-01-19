@@ -44,42 +44,41 @@ class TopCategoriesSection extends StatelessWidget {
 
             return Card(
               child: Column(
-                children:
-                    topCategories.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final category = entry.value;
-                      final position = index + 1;
+                children: topCategories.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final category = entry.value;
+                  final position = index + 1;
 
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: _getPositionColor(position),
-                          child: Text(
-                            '$positionº',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: _getPositionColor(position),
+                      child: Text(
+                        '$positionº',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
                         ),
-                        title: Text(
-                          category.name,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text(
-                          '${category.componentCount} tipos • ${category.itemQuantity} itens',
-                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                        ),
-                        trailing: Text(
-                          currencyFormat.format(category.totalValue),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: _getPositionColor(position),
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                      ),
+                    ),
+                    title: Text(
+                      category.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      '${category.componentCount} tipos • ${category.itemQuantity} itens',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                    trailing: Text(
+                      currencyFormat.format(category.totalValue),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: _getPositionColor(position),
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
             );
           },

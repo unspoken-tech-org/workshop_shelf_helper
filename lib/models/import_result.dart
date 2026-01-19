@@ -7,6 +7,8 @@ class ImportResult {
   final List<ImportError> errors;
   final List<ImportWarning> warnings;
   final bool wasExecuted;
+  final Duration? duration;
+  final DateTime? timestamp;
 
   ImportResult({
     required this.totalLines,
@@ -17,12 +19,21 @@ class ImportResult {
     required this.errors,
     required this.warnings,
     this.wasExecuted = false,
+    this.duration,
+    this.timestamp,
   });
 
   bool get hasErrors => errors.isNotEmpty;
   bool get hasWarnings => warnings.isNotEmpty;
   bool get isSuccess => errorCount == 0;
   bool get isValidationOnly => !wasExecuted;
+  
+  // Novos getters para compatibilidade com spec
+  bool get isFullSuccess => errorCount == 0 && successCount > 0;
+  bool get hasPartialSuccess => successCount > 0 && errorCount > 0;
+  bool get isFullFailure => successCount == 0 && errorCount > 0;
+  int get totalRows => totalLines;
+  double get successRate => totalLines > 0 ? successCount / totalLines : 0.0;
 }
 
 class ImportError {
